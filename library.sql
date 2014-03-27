@@ -27,27 +27,29 @@ CREATE TABLE Book (
 
 
 CREATE TABLE HasAuthor (
-  callNumber VARCHAR(10) NOT NULL primary key,
+  callNumber VARCHAR(10) NOT NULL,
   name varchar(30) NOT NULL,
+  CONSTRAINT author PRIMARY KEY (callNumber, name),
   FOREIGN KEY (callNumber) REFERENCES Book ON DELETE CASCADE);
 
 
 CREATE TABLE BookCopy (
-  callNumber VARCHAR(10) NOT NULL primary key,
+  callNumber VARCHAR(10) NOT NULL,
   copyNo VARCHAR(3) NOT NULL,
   status CHAR(10),
-  FOREIGN KEY (callNumber) REFERENCES Book );
+  CONSTRAINT copy PRIMARY KEY (callNumber, copyNo),
+  FOREIGN KEY (callNumber) REFERENCES Book (callNumber) );
 
 
 CREATE TABLE Borrowing (
   borid integer NOT NULL primary key,
   bid integer NOT NULL,
   callNumber VARCHAR(10) NOT NULL,
-  copyNo VARCHAR(3),
+  copyNo VARCHAR(3) not null,
   outDate DATE,
   inDate DATE,
   FOREIGN KEY (bid) REFERENCES Borrower,
-  FOREIGN KEY (callNumber) REFERENCES BookCopy);    
+  FOREIGN KEY (callNumber, copyNo) REFERENCES BookCopy (callNumber, copyNo));    
   
   
 
@@ -61,8 +63,9 @@ CREATE TABLE Fine (
 
 
 CREATE TABLE HasSubject (
-  callNumber varchar(10) NOT NULL primary key,
+  callNumber varchar(10) NOT NULL,
   subject char(20) NOT NULL,
+  CONSTRAINT sub PRIMARY KEY (callNumber, subject),
   FOREIGN KEY (callNumber) REFERENCES Book ON DELETE CASCADE);
 
 
