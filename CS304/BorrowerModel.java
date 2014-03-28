@@ -1,4 +1,4 @@
-package cpsc304proj;
+package library;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -8,53 +8,104 @@ public class BorrowerModel {
 	
 	private PreparedStatement ps = null;
 	private Connection con = null;
+	private ResultSet  rs = null;
+	private Statement  stmt = null;
 	
 	public BorrowerModel() {
 		
 	}
 	
-	private List<Match> findKeyword(String keyword) {
-		try {
-		ps = con.prepareStatement("SELECT * FROM book b, hassubject h WHERE b.callNumber = h.callNumber, title = ? OR mainAuthor = ? OR subject = ?");
+	/**
+	 * Search for books using keyword search on titles, authors and subjects. 
+	 * The result is a list of books that match the search together with the number of copies that are in and out.
+	 * @param keyword string entered by user to search authors, subjects and titles
+	 * @return List<Match> which contains a list of all the books and relevant information which are associated with the keyword
+	 */
+	public List<Match> findKeyword(String keyword) {
+		//System.out.println("findKeyword");
+		String callNumber;
+		String title; 
+		String isbn;
+		String mainAuthor;
+		String publisher;
+		String subject;
+		Integer year;
+		Integer numOfCopiesIn;
+		Integer numOfCopiesOut; 
 		
-	    ps.setString(1, keyword);
-	    ps.setString(2, keyword);
-	    ps.setString(3, keyword);
-
-	    ResultSet rs = ps.executeQuery();
+		try {
+		stmt = con.createStatement();
+		rs = stmt.executeQuery("SELECT book.callNumber, book.title, book.isbn, book.mainauthor, hassubject.subject "
+				+ "FROM book, hassubject WHERE book.callNumber = hassubject.callNumber, "
+				+ "title LIKE '%" + keyword + "%' OR mainAuthor LIKE '%" + keyword + "%' OR subject LIKE '%" + keyword + "'%");
+		
+	    ResultSetMetaData rsmd = rs.getMetaData();
+	    int numCols = rsmd.getColumnCount();
 	    
 	    ArrayList<Match> books = new ArrayList<Match>();
 	    
+	    // display column names;
+		for (int i = 0; i < numCols; i++)
+		{
+		    // get column name and print it
+		    System.out.printf("%-15s", rsmd.getColumnName(i+1));    
+		}
+
+		System.out.println(" ");
+		
 	    while (rs.next()) {
-	    	String title = rs.getString("title");
-	    	Integer isbn = rs.getInt("isbn");
-	    	Integer numOfCopiesIn = FindNumOfCopies(rs.getString("callNumber"), "in");
-	    	Integer numOfCopiesOut = FindNumOfCopies(rs.getString("callNumber"), "out");
+	    	callNumber = rs.getString("callNumber");
+	    	System.out.printf("%-10.10s", callNumber);
+	    	
+	    	title = rs.getString("title");
+	    	System.out.printf("%-10.10s", title);
+	    	
+	    	isbn = rs.getString("isbn");
+	    	System.out.printf("%-10.10s", isbn);
+	    	
+	    	mainAuthor = rs.getString("mainAuthor");
+	    	System.out.printf("%-10.10s", mainAuthor);
+	    	
+	    	//publisher = rs.getString("publisher");
+	    	//System.out.printf("%-10.10s", publisher);
+	    	
+	    	//year = rs.getInt("year");
+	    	//System.out.printf("%-10.10s", year);
+	    	
+	    	//callNumber = rs.getString("callNumber");
+	    	//System.out.printf("%-10.10s", callNumber);
+	    	
+	    	subject = rs.getString("subject");
+	    	System.out.printf("%-10.10s", subject);
+	    	
+
+	    	numOfCopiesIn = FindNumOfCopies(callNumber, "in");
+	    	numOfCopiesOut = FindNumOfCopies(callNumber, "out");
+	    	
 	    	books.add(new Match(title, isbn, numOfCopiesIn, numOfCopiesOut));
 	    }
 	    
-/*	    ps = con.prepareStatement("SELECT callNumber FROM hassubject WHERE subject = ?");
-		
-	    ps.setString(1, keyword);
-	    
-	    ResultSet rset = ps.executeQuery();
-	    
-	    while (rset.next()) {
-	    	String title = rset.getString("title");
-	    	int numOfCopiesIn = FindNumOfCopies(rs.getString("callNumber"), "in");
-	    	int numOfCopiesOut = FindNumOfCopies(rs.getString("callNumber"), "out");
-	    	temp.add(new Triple(title, numOfCopiesIn, numOfCopiesOut));
-	    }*/
+	    stmt.close();
 	    
 	    return books;
 	    
-		}
+	    }
 		catch (SQLException e) {
+			System.out.println("Message: " + e.getMessage());
+		   
 			return null;
 		}
+		
 	}
 	
+	/**Check his/her account. The system will display the items the borrower has currently 
+borrowed and not yet returned, any outstanding fines and the hold requests that have been 
+placed by the borrower
+*/
+	
 	private List<Triple> CheckAccountBorrows(Integer bid) {
+		
+		
 		try {
 			ps = con.prepareStatement("SELECT * FROM borrowing WHERE inDate = null, bid = ?");
 
@@ -148,28 +199,35 @@ public class BorrowerModel {
 		}
 	}
 	
+	
+	
 	private int FindNumOfCopies(String callNumber, String status) {
-		try {
-		ps = con.prepareStatement("SELECT * FROM bookcopy WHERE callNumber = ? AND status = ?");
+		ResultSet rsCopies;
+		Statement  stmt;
 		
-	    ps.setString(1, callNumber);
-	    ps.setString(2, status);
+		try {
+			stmt = con.createStatement();
+			rsCopies = stmt.executeQuery("SELECT * FROM bookcopy WHERE callNumber =" + callNumber + "AND status =" + status);
 
-	    ResultSet rs = ps.executeQuery();
+			// get info on ResultSet
+			ResultSetMetaData rsmd = rs.getMetaData();
+
+			// get number of columns
+			int numCols = rsmd.getColumnCount();
 	    
-	    int copycount = 0;
+			int copycount = 0;
 	    
-	    while (rs.next()) {
-	    	copycount++;
-	    }
+			while (rsCopies.next()) {
+				copycount++;
+			}
 	    
-	    return copycount;
-		}
-		catch (SQLException e) {
-			return 0;
+		    return copycount;
+			}
+			catch (SQLException e) {
+				return 0;
 		}
 	}
-	
+		
 	private void PlaceHoldRequest(Integer hid, Integer bid, String callNumber, Date issuedDate) {
 		if (FindNumOfCopies(callNumber, "in") > 0) {
 			try 

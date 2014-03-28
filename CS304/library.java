@@ -2,12 +2,21 @@ package library;
 
 // We need to import the java.sql package to use JDBC
 import java.sql.*;
-
+import java.util.ArrayList;
+import java.util.List;
 // for reading from the command line
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+
+
+
+
 
 // for the login window
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.*;
 
@@ -440,13 +449,12 @@ public class library implements ActionListener
     private void borrowerSearch(){
     	boolean quit;
     	String keyword;
-		ResultSet  rs;
-		Statement  stmt;
-		String title; 
-		String name;
-		String subject;
-    	
+    	BorrowerModel b = new BorrowerModel();
+		Class c = b.getClass();
+		ArrayList<Match> books = new ArrayList<Match>();
     	quit = false;
+    	
+    	//RETURN TYPES
     	
     	try{
 	    	while (!quit){
@@ -458,39 +466,105 @@ public class library implements ActionListener
 	    			quit = true;
 	    		}else{
 	    			
-		    		stmt = con.createStatement();
-		    		
-		    		rs = stmt.executeQuery("SELECT * FROM branch");
-		
-		    		// get info on ResultSet
-		    		ResultSetMetaData rsmd = rs.getMetaData();
-		
-		    		// get number of columns
-		    		int numCols = rsmd.getColumnCount();
-		
-		    		// close the statement; 
-		    		// the ResultSet will also be closed
-		    		stmt.close();
+	    			try{    
+	    		    	Method findKeyword= c.getDeclaredMethod("findKeyword", String.class);
+	    		        findKeyword.setAccessible(true);
+	    		        findKeyword.invoke(b, keyword);
+	    		        
+	    			}catch (NoSuchMethodException x) {
+	    			    x.printStackTrace();
+	    			} catch (InvocationTargetException x) {
+	    			    x.printStackTrace();
+	    			} catch (IllegalAccessException x) {
+	    			    x.printStackTrace();
+	    			}
+	    			
 	    		}
     		}
 	    	
-    	    con.close();
-    	    	in.close();
+	    	in.close();
     	    System.out.println("\nGood Bye!\n\n");
     	    System.exit(0);
-    		}
-    		catch (SQLException ex)
-    		{
-    		    System.out.println("Message: " + ex.getMessage());
-    		}	catch (IOException e)
-    		{
-    		    System.out.println("IOException!");
-    		}
+    	}
+    	catch (IOException e)
+    	{
+    	    System.out.println("IOException!");
+
+    	    try
+    	    {
+    		con.close();
+    		System.exit(-1);
+    	    }
+    	    catch (SQLException ex)
+    	    {
+    		 System.out.println("Message: " + ex.getMessage());
+    	    }
+    	}
+    	    	
+    	    
+    	
     	
     }
     
     
     private void checkAccount(){
+    	//CheckAccountBorrows(Integer bid)
+    	boolean quit;
+    	String bid;
+    	BorrowerModel b = new BorrowerModel();
+		Class c = b.getClass();
+		
+    	quit = false;
+    	
+    	//RETURN TYPES
+    	
+    	try{
+	    	while (!quit){
+	    		System.out.println("Enter Borrower ID (or type quit to return to menu): ");
+	
+	    		bid = in.readLine(); //CONVERT TO INT
+
+	    		if(bid.equals("quit")){
+	    			quit = true;
+	    		}else{
+	    			
+	    			try{    
+	    		    	Method checkAccount= c.getDeclaredMethod("CheckAccountBorrows", Integer.class);
+	    		    	checkAccount.setAccessible(true);
+	    		    	checkAccount.invoke(b, bid);
+	    		        
+	    			}catch (NoSuchMethodException x) {
+	    			    x.printStackTrace();
+	    			} catch (InvocationTargetException x) {
+	    			    x.printStackTrace();
+	    			} catch (IllegalAccessException x) {
+	    			    x.printStackTrace();
+	    			}
+	    			
+	    		}
+    		}
+	    	
+	    	in.close();
+    	    System.out.println("\nGood Bye!\n\n");
+    	    System.exit(0);
+    	}
+    	catch (IOException e)
+    	{
+    	    System.out.println("IOException!");
+
+    	    try
+    	    {
+    		con.close();
+    		System.exit(-1);
+    	    }
+    	    catch (SQLException ex)
+    	    {
+    		 System.out.println("Message: " + ex.getMessage());
+    	    }
+    	}
+    	    	
+    	    
+    	
     	
     }
     
@@ -705,7 +779,6 @@ public class library implements ActionListener
 	}
 
 	
-	
  /* Generate a report with all the books that have been checked out. For each book the report 
   * shows the date it was checked out and the due date. 
   * 
@@ -721,6 +794,11 @@ public class library implements ActionListener
 		String     callNumber;
 		String     copyNo;
 		String     status;
+		String borid;
+		String bid;
+		String outdate;
+		String indate;
+		
 		Statement  stmt;
 		ResultSet  rsStatus;
 		ResultSet  rsDate;
@@ -730,7 +808,7 @@ public class library implements ActionListener
 		{
 		  stmt = con.createStatement();
 
-		  rsStatus = stmt.executeQuery("SELECT * FROM BookCopy WHERE status = 'out'");
+		  rsStatus = stmt.executeQuery("SELECT BookCopy.callNumber, BookCopy.copyNo, Status, Borid, Outdate, Indate FROM BookCopy, Borrowing WHERE BookCopy.callNumber = Borrowing.callNumber and BookCopy.copyNo = Borrowing.copyNo and status = 'out'");
 
 		  // get info on ResultSet
 		  ResultSetMetaData rsmd = rsStatus.getMetaData();
@@ -757,15 +835,23 @@ public class library implements ActionListener
 
 		      // simplified output formatting; truncation may occur
 
-		      callNumber = rsStatus.getString("callNumber");
+		      callNumber = rsStatus.getString("BookCopy.callNumber");
 		      System.out.printf("%-20.20s", callNumber);
 
-		      copyNo = rsStatus.getString("copyNo");
+		      copyNo = rsStatus.getString("BookCopy.copyNo");
 		      System.out.printf("%-10.10s", copyNo);
 
 		      status = rsStatus.getString("status");
 		      System.out.printf("%-15.15s", status);
+		      
+		      borid = rsStatus.getString("borid");
+		      System.out.printf("%-15.15s", borid);
     
+		      outdate = rsStatus.getString("outdate");
+		      System.out.printf("%-15.15s", outdate);
+		     
+		      indate = rsStatus.getString("indate");
+		      System.out.printf("%-15.15s", indate);
 		  }
 	 
 		  // close the statement; 
