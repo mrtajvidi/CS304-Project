@@ -1,4 +1,4 @@
-package cpsc304proj;
+package library;
 
 public class Triple {
 	

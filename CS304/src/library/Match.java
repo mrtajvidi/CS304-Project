@@ -1,13 +1,13 @@
-package cpsc304proj;
+package library;
 
 public class Match {
 	
 	String title;
-	Integer isbn;
+	String isbn;
 	int numOfCopiesIn;
 	int numOfCopiesOut;
 
-	public Match(String title, int a, int b, int c) {
+	public Match(String title, String a, int b, int c) {
 		this.title = title;
 		isbn = a;
 		numOfCopiesIn = b;

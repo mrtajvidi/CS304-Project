@@ -1,4 +1,4 @@
-package cpsc304proj;
+package library;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -13,8 +13,7 @@ public class ClerkModel {
 		
 	}
 	
-	private void AddBorrower(Integer bid, String password, String name, String address, Integer phone,
-							String emailAddress, Integer sinOrStNo, Date expiryDate, String type) {
+	private void AddBorrower(Integer bid, String password, String name, String address, Integer phone, String emailAddress, Integer sinOrStNo, Date expiryDate, String type) {
 		try {
 			ps = con.prepareStatement("INSERT INTO borrower VALUES (?,?,?,?,?,?,?,?,?)");
 

@@ -98,20 +98,26 @@ public class BorrowerModel {
 		
 	}
 	
-	/**Check his/her account. The system will display the items the borrower has currently 
-borrowed and not yet returned, any outstanding fines and the hold requests that have been 
-placed by the borrower
-*/
 	
+	/**Check his/her account. 
+	 * The system will display the items the borrower has currently borrowed and not yet returned,
+	 * any outstanding fines and the hold requests that have been placed by the borrower
+	 */
 	private List<Triple> CheckAccountBorrows(Integer bid) {
+		//Borrowing(borid, bid, callNumber, copyNo, outDate, inDate) 
+		//Fine (fid, amount, issuedDate, paidDate, borid)
+		//HoldRequest(hid, bid, callNumber, issuedDate) 
+		//
 		
+		Statement stmt;
+		ResultSet rs;
 		
 		try {
-			ps = con.prepareStatement("SELECT * FROM borrowing WHERE inDate = null, bid = ?");
-
-			ps.setInt(1, bid);
-
-			ResultSet rs = ps.executeQuery();
+			stmt = con.createStatement();
+			
+			rs = stmt.executeQuery("SELECT * FROM borrowing WHERE inDate = null, bid =" + bid);
+			
+			ResultSetMetaData rsmd = rs.getMetaData();
 
 			Triple triple;
 			List<Triple> borrows = new ArrayList<Triple>();

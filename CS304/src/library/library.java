@@ -147,7 +147,7 @@ public class library implements ActionListener
      */ 
     private boolean connect(String username, String password)
     {
-      String connectURL = "jdbc:oracle:thin:@dbhost.ugrad.cs.ubc.ca:1522:ug"; 
+      String connectURL = "jdbc:oracle:thin:@localhost:1522:ug"; 
 
       try 
       {
@@ -561,10 +561,7 @@ public class library implements ActionListener
     	    {
     		 System.out.println("Message: " + ex.getMessage());
     	    }
-    	}
-    	    	
-    	    
-    	
+    	}	    	
     	
     }
     

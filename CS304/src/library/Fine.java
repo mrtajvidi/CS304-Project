@@ -1,4 +1,4 @@
-package cpsc304proj;
+package library;
 
 import java.sql.Date;
 
