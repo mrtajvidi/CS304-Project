@@ -14,6 +14,7 @@ import java.lang.reflect.Method;
 
 
 
+
 // for the login window
 import javax.swing.*;
 
@@ -147,13 +148,14 @@ public class library implements ActionListener
      */ 
     private boolean connect(String username, String password)
     {
-      String connectURL = "jdbc:oracle:thin:@localhost:1522:ug"; 
-
+      //String connectURL = "jdbc:oracle:thin:@localhost:1522:ug"; 
+    	String connectURL = "jdbc:mysql://localhost:3306/test";
       try 
       {
 	con = DriverManager.getConnection(connectURL,username,password);
 
-	System.out.println("\nConnected to Oracle!");
+	//System.out.println("\nConnected to Oracle!");
+	System.out.println("Connected to mySQL!");
 	return true;
       }
       catch (SQLException ex)
@@ -439,6 +441,65 @@ public class library implements ActionListener
     	}
 }
     
+    private void addNewBook(){
+    	int choice;
+    	boolean quit;
+    	
+    	quit = false;
+    	
+    	try
+    	{
+    		con.setAutoCommit(false);
+    		
+    		while(!quit)
+    		{
+    			System.out.print("\n\nPlease choose one of the following: \n");
+    			System.out.print("1.  Add Standard\n");
+    			System.out.print("2.  Add Additional Author\n");
+    			System.out.print("3.  Add Additional Subject\n");
+    			System.out.print("4.  Add Additional Copy\n");
+    			System.out.print("5.  Quit");
+    			
+    			choice = Integer.parseInt(in.readLine());
+    			
+    			System.out.println(" ");
+    			
+    			switch(choice)
+    			{
+    				case 1: addStandard(); break;
+    				case 2: moreAuthor(); break;
+    				case 3: moreSubject(); break;
+    				case 4: moreCopy(); break;
+    				case 5: quit = true;
+    			}
+    		}
+    		
+    		con.close();
+    		in.close();
+    		System.out.println("\nGood Bye!\n\n");
+    		System.exit(0);
+    	}
+    	catch (IOException e)
+    	{
+    	    System.out.println("IOException!");
+
+    	    try
+    	    {
+    		con.close();
+    		System.exit(-1);
+    	    }
+    	    catch (SQLException ex)
+    	    {
+    		 System.out.println("Message: " + ex.getMessage());
+    	    }
+    	}
+    	catch (SQLException ex)
+    	{
+    	    System.out.println("Message: " + ex.getMessage());
+    	}
+    	
+    }
+    
     
     /*Search for books using keyword search on titles, authors and subjects. The result is a list 
      *of books that match the search together with the number of copies that are in and out. 
@@ -500,10 +561,6 @@ public class library implements ActionListener
     		 System.out.println("Message: " + ex.getMessage());
     	    }
     	}
-    	    	
-    	    
-    	
-    	
     }
     
     
@@ -593,187 +650,626 @@ public class library implements ActionListener
 		
 	}
 	
-
-	private void addNewBook(){
-		/* UPDATES:
-		 * Book (callNumber, isbn, title, mainAuthor, publisher, year )
-		 * HasAuthor (callNumber, name)
-		 * HasSubject (callNumber, subject) 
-		 * BookCopy (callNumber, copyNo, status) */
-
-		//Book Values
-		String callNumber;
-		String isbn;
-		String title;
-		String mainAuthor;
-		String publisher;
-		int year;
+	private void addStandard(){
+		boolean quit;
 		
-		//HasAuthor Values
-		String name; 
+		String callNumber, isbn, title, mainAuthor, publisher, yearTemp, subject, copyNo, status; 
 		
-		//HasSubject Values
-		String subject;
+		LibrarianModel libModel = new LibrarianModel();
+		Class c = libModel.getClass();
 		
-		//BookCopy Values
-		String copyNo;
-		String status;
+		quit = false;
 		
-		PreparedStatement psBook;
-		PreparedStatement psAuthor;
-		PreparedStatement psSubject;
-		PreparedStatement psCopy;
-		
-		boolean moreAuthors = true;
-		String authorVal;
-		
-		boolean moreSubjects = true;
-		String subjectVal;
-		
-		boolean moreCopies = true;
-		String copyVal; 
-		
-		try
-		{
-		  psBook = con.prepareStatement("INSERT INTO Book VALUES (?,?,?,?,?,?)");
-		  psAuthor = con.prepareStatement("INSERT INTO HasAuthor VALUES (?,?)");
-		  psSubject = con.prepareStatement("INSERT INTO HasSubject VALUES (?,?)");
-		  psCopy = con.prepareStatement("INSERT INTO BookCopy VALUES (?,?,?)");
-		  
-		  System.out.print("\nCall Number: ");
-		  callNumber = in.readLine();
-		  psBook.setString(1, callNumber);
-		  psAuthor.setString(1, callNumber);
-		  psSubject.setString(1, callNumber);
-		  psCopy.setString(1, callNumber);
-
-		  System.out.print("\nISBN: ");
-		  isbn = in.readLine();
-		  psBook.setString(2, isbn);
-		  
-		  System.out.print("\nTitle: ");
-		  title = in.readLine();
-		  psBook.setString(3, title);
-		  
-		  System.out.print("\nMain Author: ");
-		  mainAuthor = in.readLine();
-		  psBook.setString(4, mainAuthor);
-		  psAuthor.setString(2, mainAuthor);
-		  
-		  System.out.print("\nYear: ");
-		  String yearTemp = in.readLine();
-		  if (yearTemp.length() == 0)
-		  {
-		      psBook.setNull(6, java.sql.Types.INTEGER);
-		  }
-		  else
-		  {
-		      year = Integer.parseInt(yearTemp);
-		      psBook.setInt(6, year);
-		  }
-
-		  System.out.print("\nPublisher: ");
-		  publisher = in.readLine();
-		  
-		  if (publisher.length() == 0)
-	          {
-		      psBook.setString(5, null);
-		  }
-		  else
-		  {
-		      psBook.setString(5, publisher);
-		  }
-		  
-		  System.out.print("\nSubject: ");
-		  subject = in.readLine();
-		  psSubject.setString(2, subject);
-		  
-		  System.out.print("\nCopy Number: ");
-		  copyNo = in.readLine();
-		  psCopy.setString(2, copyNo);
-		  
-		  System.out.print("\nStatus: ");
-		  status = in.readLine();
-		  psCopy.setString(3, status);
-			 
-		  psBook.executeUpdate();
-		  psAuthor.executeUpdate();
-		  psSubject.executeUpdate();
-		  psCopy.executeUpdate();
-		  
-		  while (moreAuthors){
-			  System.out.print("\nOther Authors? (if yes enter y, or n otherwise): ");
-			  authorVal = in.readLine();
-			  
-			  if(authorVal.equals("y")){
-				  System.out.print("\nAuthor Name: ");
-				  name = in.readLine();
-				  psAuthor.setString(2, name);
-				  psAuthor.executeUpdate();
-				  moreAuthors = true;
-			  }else{
-				  moreAuthors = false;
-			  }
-		  }	
-		  
-		  while (moreSubjects){
-			  System.out.print("\nOther Subjects? (if yes enter y, or n otherwise): ");
-			  subjectVal = in.readLine();
-			  
-			  if(subjectVal.equals("y")){
-				  System.out.print("\nAdditional Subject: ");
-				  subject = in.readLine();
-				  psSubject.setString(2, subject);
-				  psSubject.executeUpdate();
-				  moreSubjects = true;
-			  }else{
-				  moreSubjects = false;
-			  }
-		  }	
-		  
-		  while (moreCopies){
-			  System.out.print("\nOther Copies? (if yes enter y, or n otherwise): ");
-			  copyVal = in.readLine();
-			  
-			  if(copyVal.equals("y")){
-				  System.out.print("\nAdditional Copy Number: ");
-				  copyNo = in.readLine();
-				  psCopy.setString(2, copyNo);
-				  psCopy.executeUpdate();
-				  moreCopies = true;
-			  }else{
-				  moreCopies = false;
-			  }
-		  }	
-
-		  // commit work 
-		  con.commit();
-
-		  psBook.close();
-		  psAuthor.close();
-		  psSubject.close();
-		  psCopy.close();
-		  
+		try{
+			while(!quit)
+			{
+				System.out.println("Enter CallNumber: \n");
+				callNumber = in.readLine();
+				
+				if(callNumber.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter isbn: \n");
+				isbn = in.readLine();
+				
+				if(isbn.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter title: \n");
+				title = in.readLine();
+				
+				if(title.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter mainAuthor: \n");
+				mainAuthor = in.readLine();
+				
+				if(mainAuthor.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter publisher: \n");
+				publisher = in.readLine();
+				
+				if(publisher.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter yearTemp: \n");
+				yearTemp = in.readLine();
+				
+				if(yearTemp.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter subject: \n");
+				subject = in.readLine();
+				
+				if(subject.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter copyNo: \n");
+				copyNo = in.readLine();
+				
+				if(copyNo.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter status: \n");
+				status = in.readLine();
+				
+				if(status.equals("quit"))
+					quit = true;
+				
+				try{
+					Method addBookStandard = c.getDeclaredMethod("addBookStandard", String.class, String.class, String.class, String.class, String.class, Integer.class, String.class, String.class, String.class, Connection.class);
+					addBookStandard.setAccessible(true);
+					addBookStandard.invoke(libModel, callNumber,isbn, title, mainAuthor, publisher, yearTemp, subject, copyNo, status, con);
+				}
+				catch (NoSuchMethodException x)
+				{
+					x.printStackTrace();
+				}
+				catch (InvocationTargetException x)
+				{
+					x.printStackTrace();
+				}
+				catch (IllegalAccessException x)
+				{
+					x.printStackTrace();
+				}
+			}
+			
+			in.close();
+			System.out.println("\nGoodBye! \n\n");
+			System.exit(0);
 		}
 		catch (IOException e)
 		{
-		    System.out.println("IOException!");
-		}
-		catch (SQLException ex)
-		{
-		    System.out.println("Message: " + ex.getMessage());
-		    try 
-		    {
-			// undo the insert
-			con.rollback();	
-		    }
-		    catch (SQLException ex2)
-		    {
-			System.out.println("Message: " + ex2.getMessage());
-			System.exit(-1);
-		    }
+			System.out.println("IOException!");
+			
+			try
+			{
+				con.close();
+				System.exit(-1);
+			}
+			catch (SQLException ex)
+			{
+				System.out.println("Message: " + ex.getMessage());
+			}
 		}
 	}
+	
+	private void moreAuthor(){
+		boolean quit;
+		
+		String callNumber, name; 
+		
+		LibrarianModel libModel = new LibrarianModel();
+		Class c = libModel.getClass();
+		
+		quit = false;
+		
+		try
+		{
+			while(!quit)
+			{
+				System.out.println("Enter CallNumber: \n");
+				callNumber = in.readLine();
+				
+				if(callNumber.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter author name: \n");
+				name = in.readLine();
+				
+				if(name.equals("quit"))
+					quit = true;
+				
+				try
+				{
+					Method addMoreAuthor = c.getDeclaredMethod("addMoreAuthor", String.class, String.class, Connection.class);
+					addMoreAuthor.setAccessible(true);
+					addMoreAuthor.invoke(libModel, callNumber, name, con);
+				}
+				catch (NoSuchMethodException x)
+				{
+					x.printStackTrace();
+				}
+				catch (InvocationTargetException x)
+				{
+					x.printStackTrace();
+				}
+				catch (IllegalAccessException x)
+				{
+					x.printStackTrace();
+				}
+			}
+			
+			in.close();
+			System.out.println("\nGoodBye! \n\n");
+			System.exit(0);
+		}
+		catch (IOException e)
+		{
+			System.out.println("IOException!");
+			
+			try
+			{
+				con.close();
+				System.exit(-1);
+			}
+			catch (SQLException ex)
+			{
+				System.out.println("Message: " + ex.getMessage());
+			}
+		}	
+	}
+	
+	private void moreSubject(){
+		boolean quit;
+		
+		String callNumber, subject; 
+		
+		LibrarianModel libModel = new LibrarianModel();
+		Class c = libModel.getClass();
+		
+		quit = false;
+		
+		try
+		{
+			while(!quit)
+			{
+				System.out.println("Enter CallNumber: \n");
+				callNumber = in.readLine();
+				
+				if(callNumber.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter subject: \n");
+				subject = in.readLine();
+				
+				if(subject.equals("quit"))
+					quit = true;
+			
+				try
+				{
+					Method addMoreSubject = c.getDeclaredMethod("addMoreSubject", String.class, String.class, Connection.class);
+					addMoreSubject.setAccessible(true);
+					addMoreSubject.invoke(libModel, callNumber, subject, con);
+				}
+				catch (NoSuchMethodException x)
+				{
+					x.printStackTrace();
+				}
+				catch (InvocationTargetException x)
+				{
+					x.printStackTrace();
+				}
+				catch (IllegalAccessException x)
+				{
+					x.printStackTrace();
+				}
+			}
+			
+			in.close();
+			System.out.println("\nGoodBye! \n\n");
+			System.exit(0);
+		}
+		catch (IOException e)
+		{
+			System.out.println("IOException!");
+			
+			try
+			{
+				con.close();
+				System.exit(-1);
+			}
+			catch (SQLException ex)
+			{
+				System.out.println("Message: " + ex.getMessage());
+			}
+		}	
+	}
+	
+	private void moreCopy(){
+		boolean quit;
+		
+		String callNumber, copyNo, status; 
+		
+		LibrarianModel libModel = new LibrarianModel();
+		Class c = libModel.getClass();
+		
+		quit = false;
+		
+		try
+		{
+			while(!quit)
+			{
+				System.out.println("Enter CallNumber: \n");
+				callNumber = in.readLine();
+				
+				if(callNumber.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter copyNo: \n");
+				copyNo = in.readLine();
+				
+				if(copyNo.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter status: \n");
+				status = in.readLine();
+				
+				if(status.equals("quit"))
+					quit = true;
+				
+				try
+				{
+					Method addMoreCopy = c.getDeclaredMethod("addMoreCopy", String.class, String.class, String.class, Connection.class);
+					addMoreCopy.setAccessible(true);
+					addMoreCopy.invoke(libModel, callNumber, copyNo, status, con);
+				}
+				catch (NoSuchMethodException x)
+				{
+					x.printStackTrace();
+				}
+				catch (InvocationTargetException x)
+				{
+					x.printStackTrace();
+				}
+				catch (IllegalAccessException x)
+				{
+					x.printStackTrace();
+				}
+			}
+			
+			in.close();
+			System.out.println("\nGoodBye! \n\n");
+			System.exit(0);
+		}
+		catch (IOException e)
+		{
+			System.out.println("IOException!");
+			
+			try
+			{
+				con.close();
+				System.exit(-1);
+			}
+			catch (SQLException ex)
+			{
+				System.out.println("Message: " + ex.getMessage());
+			}
+		}	
+	}
+	
+	
+	private void generateReportCheckedOut(){
+		boolean quit;
+		
+		LibrarianModel libModel = new LibrarianModel();
+		Class c = libModel.getClass();
+		
+		quit = false;
+		
+		try
+		{
+			while(!quit)
+			{
+				try
+				{
+					Method generateReport_CheckedOut = c.getDeclaredMethod("generateReport_CheckedOut", Connection.class);
+					generateReport_CheckedOut.setAccessible(true);
+					generateReport_CheckedOut.invoke(libModel, con);
+				}
+				catch (NoSuchMethodException x)
+				{
+					x.printStackTrace();
+				}
+				catch (InvocationTargetException x)
+				{
+					x.printStackTrace();
+				}
+				catch (IllegalAccessException x)
+				{
+					x.printStackTrace();
+				}
+			}
+			
+			in.close();
+			System.out.println("\nGood Bye!\n\n");
+			System.exit(0);
+		}
+		catch (IOException e)
+		{
+			System.out.println("IOException!");
+			
+			try
+			{
+				con.close();
+				System.exit(-1);
+			}
+			catch (SQLException ex)
+			{
+				System.out.println("Message: " + ex.getMessage());
+			}
+		}
+		
+	}
+	
+	private void generateReportPopular(){
+		
+		boolean quit;
+		
+		String n_input, fromDate, toDate;
+		int n;
+		
+		LibrarianModel libModel = new LibrarianModel();
+		Class c = libModel.getClass();
+		
+		quit = false;
+		
+		try
+		{
+			while(!quit)
+			{
+				System.out.println("Enter the start date: \n");
+				fromDate = in.readLine();
+				
+				if(fromDate.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter the end date: \n");
+				toDate = in.readLine();
+				
+				if(toDate.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter the number of results: \n");
+				n_input = in.readLine();
+				n = Integer.parseInt(n_input);
+				
+				if(n_input.equals("quit"))
+					quit = true;
+				
+				try
+				{
+					Method findPopular = c.getDeclaredMethod("findPopular", String.class, String.class, Integer.class, Connection.class);
+					findPopular.setAccessible(true);
+					findPopular.invoke(libModel, fromDate, toDate, n, con);
+				}
+				catch (NoSuchMethodException x)
+				{
+					x.printStackTrace();
+				}
+				catch (InvocationTargetException x)
+				{
+					x.printStackTrace();
+				}
+				catch (IllegalAccessException x)
+				{
+					x.printStackTrace();
+				}
+			}
+			
+			in.close();
+			System.out.println("\nGoodBye! \n\n");
+			System.exit(0);
+		}
+		catch (IOException e)
+		{
+			System.out.println("IOException!");
+			
+			try
+			{
+				con.close();
+				System.exit(-1);
+			}
+			catch (SQLException ex)
+			{
+				System.out.println("Message: " + ex.getMessage());
+			}
+		}	
+	}
+	
+
+//	*private void addNewBook(){
+//		/* UPDATES:
+//		 * Book (callNumber, isbn, title, mainAuthor, publisher, year )
+//		 * HasAuthor (callNumber, name)
+//		 * HasSubject (callNumber, subject) 
+//		 * BookCopy (callNumber, copyNo, status) */
+//
+//		//Book Values
+//		String callNumber;
+//		String isbn;
+//		String title;
+//		String mainAuthor;
+//		String publisher;
+//		int year;
+//		
+//		//HasAuthor Values
+//		String name; 
+//		
+//		//HasSubject Values
+//		String subject;
+//		
+//		//BookCopy Values
+//		String copyNo;
+//		String status;
+//		
+//		PreparedStatement psBook;
+//		PreparedStatement psAuthor;
+//		PreparedStatement psSubject;
+//		PreparedStatement psCopy;
+//		
+//		boolean moreAuthors = true;
+//		String authorVal;
+//		
+//		boolean moreSubjects = true;
+//		String subjectVal;
+//		
+//		boolean moreCopies = true;
+//		String copyVal; 
+//		
+//		try
+//		{
+//		  psBook = con.prepareStatement("INSERT INTO Book VALUES (?,?,?,?,?,?)");
+//		  psAuthor = con.prepareStatement("INSERT INTO HasAuthor VALUES (?,?)");
+//		  psSubject = con.prepareStatement("INSERT INTO HasSubject VALUES (?,?)");
+//		  psCopy = con.prepareStatement("INSERT INTO BookCopy VALUES (?,?,?)");
+//		  
+//		  System.out.print("\nCall Number: ");
+//		  callNumber = in.readLine();
+//		  psBook.setString(1, callNumber);
+//		  psAuthor.setString(1, callNumber);
+//		  psSubject.setString(1, callNumber);
+//		  psCopy.setString(1, callNumber);
+//
+//		  System.out.print("\nISBN: ");
+//		  isbn = in.readLine();
+//		  psBook.setString(2, isbn);
+//		  
+//		  System.out.print("\nTitle: ");
+//		  title = in.readLine();
+//		  psBook.setString(3, title);
+//		  
+//		  System.out.print("\nMain Author: ");
+//		  mainAuthor = in.readLine();
+//		  psBook.setString(4, mainAuthor);
+//		  psAuthor.setString(2, mainAuthor);
+//		  
+//		  System.out.print("\nYear: ");
+//		  String yearTemp = in.readLine();
+//		  if (yearTemp.length() == 0)
+//		  {
+//		      psBook.setNull(6, java.sql.Types.INTEGER);
+//		  }
+//		  else
+//		  {
+//		      year = Integer.parseInt(yearTemp);
+//		      psBook.setInt(6, year);
+//		  }
+//
+//		  System.out.print("\nPublisher: ");
+//		  publisher = in.readLine();
+//		  
+//		  if (publisher.length() == 0)
+//	          {
+//		      psBook.setString(5, null);
+//		  }
+//		  else
+//		  {
+//		      psBook.setString(5, publisher);
+//		  }
+//		  
+//		  System.out.print("\nSubject: ");
+//		  subject = in.readLine();
+//		  psSubject.setString(2, subject);
+//		  
+//		  System.out.print("\nCopy Number: ");
+//		  copyNo = in.readLine();
+//		  psCopy.setString(2, copyNo);
+//		  
+//		  System.out.print("\nStatus: ");
+//		  status = in.readLine();
+//		  psCopy.setString(3, status);
+//			 
+//		  psBook.executeUpdate();
+//		  psAuthor.executeUpdate();
+//		  psSubject.executeUpdate();
+//		  psCopy.executeUpdate();
+//		  
+//		  while (moreAuthors){
+//			  System.out.print("\nOther Authors? (if yes enter y, or n otherwise): ");
+//			  authorVal = in.readLine();
+//			  
+//			  if(authorVal.equals("y")){
+//				  System.out.print("\nAuthor Name: ");
+//				  name = in.readLine();
+//				  psAuthor.setString(2, name);
+//				  psAuthor.executeUpdate();
+//				  moreAuthors = true;
+//			  }else{
+//				  moreAuthors = false;
+//			  }
+//		  }	
+//		  
+//		  while (moreSubjects){
+//			  System.out.print("\nOther Subjects? (if yes enter y, or n otherwise): ");
+//			  subjectVal = in.readLine();
+//			  
+//			  if(subjectVal.equals("y")){
+//				  System.out.print("\nAdditional Subject: ");
+//				  subject = in.readLine();
+//				  psSubject.setString(2, subject);
+//				  psSubject.executeUpdate();
+//				  moreSubjects = true;
+//			  }else{
+//				  moreSubjects = false;
+//			  }
+//		  }	
+//		  
+//		  while (moreCopies){
+//			  System.out.print("\nOther Copies? (if yes enter y, or n otherwise): ");
+//			  copyVal = in.readLine();
+//			  
+//			  if(copyVal.equals("y")){
+//				  System.out.print("\nAdditional Copy Number: ");
+//				  copyNo = in.readLine();
+//				  psCopy.setString(2, copyNo);
+//				  psCopy.executeUpdate();
+//				  moreCopies = true;
+//			  }else{
+//				  moreCopies = false;
+//			  }
+//		  }	
+//
+//		  // commit work 
+//		  con.commit();
+//
+//		  psBook.close();
+//		  psAuthor.close();
+//		  psSubject.close();
+//		  psCopy.close();
+//		  
+//		}
+//		catch (IOException e)
+//		{
+//		    System.out.println("IOException!");
+//		}
+//		catch (SQLException ex)
+//		{
+//		    System.out.println("Message: " + ex.getMessage());
+//		    try 
+//		    {
+//			// undo the insert
+//			con.rollback();	
+//		    }
+//		    catch (SQLException ex2)
+//		    {
+//			System.out.println("Message: " + ex2.getMessage());
+//			System.exit(-1);
+//		    }
+//		}
+//	}
 
 	
  /* Generate a report with all the books that have been checked out. For each book the report 
@@ -784,87 +1280,85 @@ public class library implements ActionListener
   * If a subject is provided the report lists only books related to that subject, 
   * otherwise all the books that are out are listed by the report. 
   */
-	private void generateReportCheckedOut(){
-		//Borrowing(borid, bid, callNumber, copyNo, outDate, inDate) 
-		//BookCopy (callNumber, copyNo, status) 
-		
-		String     callNumber;
-		String     copyNo;
-		String     status;
-		String borid;
-		String bid;
-		String outdate;
-		String indate;
-		
-		Statement  stmt;
-		ResultSet  rsStatus;
-		ResultSet  rsDate;
-		
-		
-		try
-		{
-		  stmt = con.createStatement();
+//	private void generateReportCheckedOut(){
+//		//Borrowing(borid, bid, callNumber, copyNo, outDate, inDate) 
+//		//BookCopy (callNumber, copyNo, status) 
+//		
+//		String     callNumber;
+//		String     copyNo;
+//		String     status;
+//		String borid;
+//		String bid;
+//		String outdate;
+//		String indate;
+//		
+//		Statement  stmt;
+//		ResultSet  rsStatus;
+//		ResultSet  rsDate;
+//		
+//		
+//		try
+//		{
+//		  stmt = con.createStatement();
+//
+//		  rsStatus = stmt.executeQuery("SELECT BookCopy.callNumber, BookCopy.copyNo, Status, Borid, Outdate, Indate FROM BookCopy, Borrowing WHERE BookCopy.callNumber = Borrowing.callNumber and BookCopy.copyNo = Borrowing.copyNo and status = 'out'");
+//
+//		  // get info on ResultSet
+//		  ResultSetMetaData rsmd = rsStatus.getMetaData();
+//
+//		  // get number of columns
+//		  int numCols = rsmd.getColumnCount();
+//
+//		  System.out.println(" ");
+//		  
+//		  // display column names;
+//		  for (int i = 0; i < numCols; i++)
+//		  {
+//		      // get column name and print it
+//
+//		      System.out.printf("%-15s", rsmd.getColumnName(i+1));    
+//		  }
+//
+//		  System.out.println(" ");
+//
+//		  while(rsStatus.next())
+//		  {
+//		      // for display purposes get everything from Oracle 
+//		      // as a string
+//
+//		      // simplified output formatting; truncation may occur
+//
+//		      callNumber = rsStatus.getString("BookCopy.callNumber");
+//		      System.out.printf("%-20.20s", callNumber);
+//
+//		      copyNo = rsStatus.getString("BookCopy.copyNo");
+//		      System.out.printf("%-10.10s", copyNo);
+//
+//		      status = rsStatus.getString("status");
+//		      System.out.printf("%-15.15s", status);
+//		      
+//		      borid = rsStatus.getString("borid");
+//		      System.out.printf("%-15.15s", borid);
+//    
+//		      outdate = rsStatus.getString("outdate");
+//		      System.out.printf("%-15.15s", outdate);
+//		     
+//		      indate = rsStatus.getString("indate");
+//		      System.out.printf("%-15.15s", indate);
+//		  }
+//	 
+//		  // close the statement; 
+//		  // the ResultSet will also be closed
+//		  stmt.close();
+//		}
+//		catch (SQLException ex)
+//		{
+//		    System.out.println("Message: " + ex.getMessage());
+//		}
+//		
+//	}
 
-		  rsStatus = stmt.executeQuery("SELECT BookCopy.callNumber, BookCopy.copyNo, Status, Borid, Outdate, Indate FROM BookCopy, Borrowing WHERE BookCopy.callNumber = Borrowing.callNumber and BookCopy.copyNo = Borrowing.copyNo and status = 'out'");
-
-		  // get info on ResultSet
-		  ResultSetMetaData rsmd = rsStatus.getMetaData();
-
-		  // get number of columns
-		  int numCols = rsmd.getColumnCount();
-
-		  System.out.println(" ");
-		  
-		  // display column names;
-		  for (int i = 0; i < numCols; i++)
-		  {
-		      // get column name and print it
-
-		      System.out.printf("%-15s", rsmd.getColumnName(i+1));    
-		  }
-
-		  System.out.println(" ");
-
-		  while(rsStatus.next())
-		  {
-		      // for display purposes get everything from Oracle 
-		      // as a string
-
-		      // simplified output formatting; truncation may occur
-
-		      callNumber = rsStatus.getString("BookCopy.callNumber");
-		      System.out.printf("%-20.20s", callNumber);
-
-		      copyNo = rsStatus.getString("BookCopy.copyNo");
-		      System.out.printf("%-10.10s", copyNo);
-
-		      status = rsStatus.getString("status");
-		      System.out.printf("%-15.15s", status);
-		      
-		      borid = rsStatus.getString("borid");
-		      System.out.printf("%-15.15s", borid);
-    
-		      outdate = rsStatus.getString("outdate");
-		      System.out.printf("%-15.15s", outdate);
-		     
-		      indate = rsStatus.getString("indate");
-		      System.out.printf("%-15.15s", indate);
-		  }
-	 
-		  // close the statement; 
-		  // the ResultSet will also be closed
-		  stmt.close();
-		}
-		catch (SQLException ex)
-		{
-		    System.out.println("Message: " + ex.getMessage());
-		}
-		
-	}
-
-	private void generateReportPopular(){
 	
-	}
 
     //values must be of the form (?,?,?,?,...,?)
     private void insertTuple(String table, String values){
