@@ -1,7 +1,7 @@
 
 CREATE TABLE BorrowerType (
   type CHAR(20) NOT NULL PRIMARY KEY,
-  bookTimeLimit DATE);
+  bookTimeLimit Integer);
 
 
 CREATE TABLE Borrower (
@@ -12,7 +12,7 @@ CREATE TABLE Borrower (
   phone integer,
   emailAddress VARCHAR(45),
   sinOrStNo integer,
-  expiryDate DATE NULL,
+  expiryDate VARCHAR(20),
   type CHAR(20) NOT NULL,
   FOREIGN KEY (type) REFERENCES BorrowerType);
 
@@ -73,7 +73,7 @@ CREATE TABLE HoldRequest (
   hid integer NOT NULL primary key,
   bid integer NOT NULL,
   callNumber VARCHAR(10) NOT NULL,
-  issuedDate DATE,
+  issuedDate VarChar(20),
   FOREIGN KEY (bid) REFERENCES Borrower (bid),
   FOREIGN KEY (callNumber) REFERENCES Book);
 
