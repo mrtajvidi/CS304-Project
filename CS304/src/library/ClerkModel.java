@@ -1,19 +1,13 @@
 package library;
 
-import java.sql.Connection;
-//import java.sql.Date;
-import java.util.Date;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
+import java.sql.*;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Date;
 
 public class ClerkModel {
 	
@@ -234,7 +228,7 @@ public class ClerkModel {
 		int borid = 0;
 		try{
 			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT bid, borid, outDate FROM borrowing WHERE callnumber = "+ callNumber + " and copyNo = " + copyNo);
+			rs = stmt.executeQuery("SELECT bid, borid, outDate FROM borrowing WHERE callnumber = "+ callNumber + " and copyNo = " + copyNo + " and indate is null");
 			
 			while(rs.next()){
 
@@ -259,7 +253,7 @@ public class ClerkModel {
 		String dueDate = ComputeDueDate(bid, outDate, con);
 		System.out.println("Due Date : " + dueDate);
 		
-		UpdateStatusIn(callNumber, copyNo,con);
+		UpdateStatusIn(callNumber, copyNo, con);
 		UpdateInDate(inDate, callNumber, con);
 		
 		
@@ -316,7 +310,7 @@ public class ClerkModel {
 			
 			//check hold requests
 				
-			CheckHoldRequests(callNumber, con);
+			CheckHoldRequests(callNumber, copyNo, con);
 			
 			
 		}
@@ -328,7 +322,7 @@ public class ClerkModel {
 	
 	
 	
-	private void UpdateStatusIn(String callNumber, String copyNo,Connection con) {
+	private void UpdateStatusIn(String callNumber, String copyNo, Connection con) {
 		PreparedStatement ps;
 		
 		try {
@@ -337,9 +331,10 @@ public class ClerkModel {
 		
 			ps.setString(1, callNumber);
 			ps.setString(2, copyNo);
+			System.out.println("callnumber : "+ callNumber + " copy no: " + copyNo);
 			
 			ps.executeUpdate();
-		
+			con.commit();
 			ps.close();
 		}
 		catch(SQLException e) {
@@ -348,15 +343,15 @@ public class ClerkModel {
 		}
 	}
 	
-	private void UpdateStatusHold(String callNumber, Connection con) {
+	private void UpdateStatusHold(String callNumber, String copyNo, Connection con) {
 		PreparedStatement ps;
 		
 		try {
 			
-			ps = con.prepareStatement("UPDATE bookcopy SET status = 'on-hold' WHERE callNumber = ? and status = ?");
+			ps = con.prepareStatement("UPDATE bookcopy SET status = 'on-hold' WHERE callNumber = ? and copyNo = ?");
 			
 			ps.setString(1, callNumber);
-			ps.setString(2, "out");
+			ps.setString(2, copyNo);
 			
 			ps.executeUpdate();
 			
@@ -378,7 +373,7 @@ public class ClerkModel {
 			ps.setString(2, callNumber);
 			
 			ps.executeUpdate();
-			
+			con.commit();
 			ps.close();
 			}
 			catch(SQLException e) {
@@ -387,7 +382,7 @@ public class ClerkModel {
 			}
 	}
 	
-	private void CheckHoldRequests(String callNumber, Connection con) {
+	private void CheckHoldRequests(String callNumber, String copyNo, Connection con) {
 		ResultSet rs;
 		Statement stmt;
 		List<String> issuedDates = new ArrayList<String>();
@@ -406,12 +401,22 @@ public class ClerkModel {
 		    
 		    //CHECK WHO RESERVED THE BOOK FIRST AND EMAIL THEM
 		    if (isHold){
-		    	Integer first = firstReserve(issuedDates, bid);
+		    	Integer firstBID = firstReserve(issuedDates, bid);
 		    
-		    	UpdateStatusHold(callNumber, con); 
-		    
+		    	UpdateStatusHold(callNumber, copyNo, con); 
+		    	//delete hold request
+		    	
+		    	ps = con.prepareStatement("DELETE FROM holdrequest WHERE callnumber = ? and bid = ?");
+		    	
+		    	ps.setString(1, callNumber);
+		    	ps.setInt(2, firstBID);
+		    	
+		    	ps.executeUpdate();
+				con.commit();
+				ps.close();
+		    	
 		    	System.out.println("BOOK PLACED ON HOLD");
-		    	System.out.println("EMAILING BID USER: "+ first);
+		    	System.out.println("EMAILING BID USER: "+ firstBID);
 		    
 		    }
 		}
@@ -627,37 +632,36 @@ public class ClerkModel {
 			return null;
 		}
 	}
-	
 	private boolean isOverdue(String inDate, String dueDate){
-		
+
 		Date inDate_Date, dueDate_Date;
-		
+
 		inDate_Date = stringToDate(inDate);
 		dueDate_Date = stringToDate(dueDate);
-		
+
 		//inDate_Date is after dueDate_Date
 		if(inDate_Date.compareTo(dueDate_Date) > 0) 
 			return true;
 		else
 			return false;
 	}
-	
+
 	private String AdjustDate(String outDate, int length) {
 		Date temp, result;
 		String output;
-		
+
 		temp = stringToDate(outDate);
 		result = addDate(temp, length*7 );
 		output = dateToString(result);
-		
+
 		return output;
 	}
-	
+
 	private Date stringToDate(String string_input)
 	{
 		SimpleDateFormat df = new SimpleDateFormat("MM/dd/yyyy");
 		Date date_output = null;
-		
+
 		try
 		{
 			date_output = df.parse(string_input);
@@ -666,31 +670,32 @@ public class ClerkModel {
 		{
 			e.printStackTrace();
 		}
-		
+
 		return date_output;
 	}
-	
+
 	private String dateToString(Date date_input) {
-		
+
 		String string_output = null;
-		
+
 		DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
 		string_output = df.format(date_input);
-		
+
 		return string_output;
 	}
-	
+
 	private Date addDate(Date inputDate, int amount_add) {
-		
+
 		Date result;
-		
+
 		Calendar c = Calendar.getInstance(); 
 		c.setTime(inputDate);
-		
+
 		c.add(Calendar.DATE, amount_add);
 		result = c.getTime();
-		
+
 		return result;
 	}
-	
+
 }
+
