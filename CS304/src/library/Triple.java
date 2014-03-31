@@ -1,15 +1,15 @@
 package library;
 
-public class Triple {
-	
-	String a;
-	String b;
-	String c;
+public class Triple<X,Y,Z> {
 
-	public Triple(String a, String b, String c) {
-		this.a = a;
-		this.b = b;
-		this.c = c;
+	public final X x; 
+	public final Y y;
+	public final Z z;
+
+	public Triple(X x, Y y, Z z) {
+		this.x = x;
+		this.y = y;
+		this.z = z;
 	}
 }
 
