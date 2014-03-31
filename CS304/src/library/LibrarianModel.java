@@ -5,6 +5,8 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.security.auth.Subject;
+
 public class LibrarianModel {
 	
 	private PreparedStatement ps = null;
@@ -158,7 +160,7 @@ public class LibrarianModel {
 		
 	}
 	
-	private List<CheckedOut> generateReport_CheckedOut(Connection con){
+	private List<CheckedOut> generateReport_CheckedOut(String subject, Connection con){
 		//Borrowing(borid, bid, callNumber, copyNo, outDate, inDate) 
 		//BookCopy (callNumber, copyNo, status) 
 		
@@ -177,11 +179,23 @@ public class LibrarianModel {
 		try
 		{
 		  stmt = con.createStatement();
-		 
-		  rsStatus = stmt.executeQuery("SELECT BookCopy.callNumber, BookCopy.copyNo, Status, Borid, Outdate, Indate "
-		  		+ "FROM BookCopy, Borrowing "
-		  		+ "WHERE BookCopy.callNumber = Borrowing.callNumber and BookCopy.copyNo = Borrowing.copyNo and status = 'out'");
-
+		  
+		  if(subject.equals(""))
+		  {
+			  rsStatus = stmt.executeQuery("SELECT BookCopy.callNumber, BookCopy.copyNo, Status, Borid, Outdate, Indate "
+				  		+ "FROM BookCopy, Borrowing "
+				  		+ "WHERE BookCopy.callNumber = Borrowing.callNumber and BookCopy.copyNo = Borrowing.copyNo and status = 'out'"
+				  		+ "ORDER BY callNumber");
+		  }
+		  else //Edit
+		  {
+			  rsStatus = stmt.executeQuery("SELECT BookCopy.callNumber, BookCopy.copyNo, Status, Borid, Outdate, Indate "
+				  		+ "FROM BookCopy, Borrowing, HasSubject "
+				  		+ "WHERE BookCopy.callNumber = Borrowing.callNumber and BookCopy.copyNo = Borrowing.copyNo and status = 'out' "
+				  		+ "AND HasSubject.subject = '" + subject + "' AND Borrowing.callNumber = HasSubject.callNumber "
+				  		+ " ORDER BY callNumber");
+		  }
+		  
 		  // get info on ResultSet
 		  ResultSetMetaData rsmd = rsStatus.getMetaData();
 
@@ -243,8 +257,9 @@ public class LibrarianModel {
 		}	
 	}
 	
-	private List<Popular> find_Popular(String year, int n, Connection con)
+	private List<Popular> find_Popular(String year, String n, Connection con)
 	{
+		int n_convert = Integer.parseInt(n);
 		String title;
 		String callNumber;
 		int count;
@@ -258,9 +273,9 @@ public class LibrarianModel {
 
 		  rsPopular = stmt.executeQuery("SELECT Book.title, Borrowing.callNumber, count(*) AS borrowed_count "
 		  		+ "FROM Borrowing INNER JOIN Book ON (Borrowing.callNumber=Book.callNumber) "
-		  		+ "WHERE Borrowing.outDate Like " + year + "% "
-		  		+ "GROU BY Borrowing.callNumber "
-		  		+ "ORDER BY borrowed_count limit" + n + ";");		  
+		  		+ "WHERE Borrowing.outDate Like '" + year + "%' "
+		  		+ "GROUP BY Borrowing.callNumber "
+		  		+ "ORDER BY borrowed_count desc limit " + n + ";");		  
 
 		  // get info on ResultSet
 		  ResultSetMetaData rsmd = rsPopular.getMetaData();
@@ -296,6 +311,8 @@ public class LibrarianModel {
 
 		      count = rsPopular.getInt("borrowed_count");
 		      System.out.printf("%-20.20s", count);
+		      
+		      System.out.println(" ");
 		      
 		      borrowed_popular.add(new Popular(title, callNumber, count));
 		  }
