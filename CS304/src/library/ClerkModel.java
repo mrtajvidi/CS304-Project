@@ -8,12 +8,15 @@ public class ClerkModel {
 	
 	private PreparedStatement ps = null;
 	private Connection con = null;
+	private ResultSet rs = null;
+	private Statement  stmt = null;
 	
 	public ClerkModel() {
 		
 	}
 	
-	private void AddBorrower(Integer bid, String password, String name, String address, Integer phone, String emailAddress, Integer sinOrStNo, Date expiryDate, String type) {
+	private void AddBorrower(Integer bid, String password, String name, String address, Integer phone, 
+			String emailAddress, Integer sinOrStNo, Date expiryDate, String type) {
 		try {
 			ps = con.prepareStatement("INSERT INTO borrower VALUES (?,?,?,?,?,?,?,?,?)");
 
@@ -34,7 +37,7 @@ public class ClerkModel {
 			ps.close();
 		}
 		catch (SQLException e) {
-
+			System.out.println("Message: " + e.getMessage());
 		}
 
 	}
