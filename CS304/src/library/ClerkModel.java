@@ -1,6 +1,14 @@
 package library;
 
-import java.sql.*;
+import java.sql.Connection;
+//import java.sql.Date;
+import java.util.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -521,7 +529,12 @@ public class ClerkModel {
 					
 	}
 
+<<<<<<< HEAD
 	private void AssessFine(Integer bid, String callNumber, Integer fid, double amount, String issuedDate, Connection con) {
+=======
+//###################################### Caution ########################################	
+	private void AssessFine(Integer bid, String callNumber, Integer fid, double amount, Date issuedDate, Connection con) {
+>>>>>>> ccc05e9b0ca1650a85d7e621ea4e5a2319f1b5e5
 		try {
 			ps = con.prepareStatement("SELECT borid FROM borrowing WHERE bid = ?, callnumber = ?");
 			
@@ -542,7 +555,11 @@ public class ClerkModel {
 			
 			ps.setInt(1, fid);
 			ps.setDouble(2, amount);
+<<<<<<< HEAD
 			ps.setString(3, issuedDate);
+=======
+			//ps.setDate(3, issuedDate); // THIS NEED TO BE CHANGED
+>>>>>>> ccc05e9b0ca1650a85d7e621ea4e5a2319f1b5e5
 			ps.setNull(4, Types.DATE);
 			ps.setInt(5, borid);
 			
@@ -633,12 +650,21 @@ public class ClerkModel {
 		}
 	}
 	private boolean isOverdue(String inDate, String dueDate){
+<<<<<<< HEAD
 
 		Date inDate_Date, dueDate_Date;
 
 		inDate_Date = stringToDate(inDate);
 		dueDate_Date = stringToDate(dueDate);
 
+=======
+		
+		Date inDate_Date, dueDate_Date;
+		
+		inDate_Date = stringToDate(inDate);
+		dueDate_Date = stringToDate(dueDate);
+		
+>>>>>>> ccc05e9b0ca1650a85d7e621ea4e5a2319f1b5e5
 		//inDate_Date is after dueDate_Date
 		if(inDate_Date.compareTo(dueDate_Date) > 0) 
 			return true;
@@ -649,6 +675,7 @@ public class ClerkModel {
 	private String AdjustDate(String outDate, int length) {
 		Date temp, result;
 		String output;
+<<<<<<< HEAD
 
 		temp = stringToDate(outDate);
 		result = addDate(temp, length*7 );
@@ -657,11 +684,25 @@ public class ClerkModel {
 		return output;
 	}
 
+=======
+		
+		temp = stringToDate(outDate);
+		result = addDate(temp, length);
+		output = dateToString(result);
+		
+		return output;
+	}
+	
+>>>>>>> ccc05e9b0ca1650a85d7e621ea4e5a2319f1b5e5
 	private Date stringToDate(String string_input)
 	{
 		SimpleDateFormat df = new SimpleDateFormat("MM/dd/yyyy");
 		Date date_output = null;
+<<<<<<< HEAD
 
+=======
+		
+>>>>>>> ccc05e9b0ca1650a85d7e621ea4e5a2319f1b5e5
 		try
 		{
 			date_output = df.parse(string_input);
@@ -670,6 +711,7 @@ public class ClerkModel {
 		{
 			e.printStackTrace();
 		}
+<<<<<<< HEAD
 
 		return date_output;
 	}
@@ -697,5 +739,34 @@ public class ClerkModel {
 		return result;
 	}
 
+=======
+		
+		return date_output;
+	}
+	
+	private String dateToString(Date date_input) {
+		
+		String string_output = null;
+		
+		DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
+		string_output = df.format(date_input);
+		
+		return string_output;
+	}
+	
+	private Date addDate(Date inputDate, int amount_add) {
+		
+		Date result;
+		
+		Calendar c = Calendar.getInstance(); 
+		c.setTime(inputDate);
+		
+		c.add(Calendar.DATE, amount_add);
+		result = c.getTime();
+		
+		return result;
+	}
+		
+>>>>>>> ccc05e9b0ca1650a85d7e621ea4e5a2319f1b5e5
 }
 
