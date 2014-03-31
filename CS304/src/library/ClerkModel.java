@@ -632,85 +632,30 @@ public class ClerkModel {
 	
 	private boolean isOverdue(String inDate, String dueDate){
 		
-		String[] dueDateString = dueDate.split("/");
-		String yearString[] = dueDateString[2].split(" ");
-		Integer yearDue = Integer.valueOf(yearString[0]);
-		System.out.println("yeardue: " + yearDue);
-		Integer monthDue = Integer.valueOf(dueDateString[0]);
-		System.out.println("monthDue: " + monthDue);
-		Integer dayDue = Integer.valueOf(dueDateString[1]);
-		System.out.println("Day Due: " + dayDue);
+		Date inDate_Date, dueDate_Date;
 		
-		String[] inDateString = inDate.split("/");
-		String yearS[] = inDateString[2].split(" ");
-		Integer yearIn = Integer.valueOf(yearS[0]);
-		System.out.println("yearIn: " + yearIn);
-		Integer monthIn = Integer.valueOf(inDateString[0]);
-		System.out.println("monthIn: " + monthIn);
-		Integer dayIn = Integer.valueOf(inDateString[1]);
-		System.out.println("DayIn: " + dayIn);
+		inDate_Date = stringToDate(inDate);
+		dueDate_Date = stringToDate(dueDate);
 		
-		if ( monthIn > monthDue || yearIn > yearDue){
-			System.out.println("IS OVERDUE");
+		//inDate_Date is after dueDate_Date
+		if(inDate_Date.compareTo(dueDate_Date) > 0) 
 			return true;
-		}
-		if (dayIn > dayDue){
-			System.out.println("IS OVERDUE");
-
-			return true;
-		}
-		else{
-			System.out.println("NOT OVERDUE");
-
+		else
 			return false;
-		}
 	}
 
 	private String AdjustDate(String outDate, int length) {
-		String date = outDate;
-		String[] strArr = date.split("/");
-		String yearString[] = strArr[2].split(" ");
-		Integer year = Integer.valueOf(yearString[0]);
-		System.out.println("year: " + year);
-		Integer month = Integer.valueOf(strArr[0]);
-		System.out.println("month: " + month);
-
-		Integer day = Integer.valueOf(strArr[1]);
-		System.out.println("day: " + day);
-
+		Date temp, result;
+		String output;
 		
-		day = day + length*7;
+		temp = stringToDate(outDate);
+		result = addDate(temp, length);
+		output = dateToString(result);
 		
-		return ( month.toString() + "/" + day.toString() + "/" + year.toString());
-		
-		/*switch(month) {
-		case 1: if (day + length > 31) {
-			length -= 31 - day;
-		} else {
-			day += length;
-			return (year.toString() + "-" + "1" + "-" + day.toString());
-		}
-		case 2: if (day + length > 28) {
-			length -= 31 - day;
-		} else {
-			day += length;
-			return (year.toString() + "-" + "2" + "-" + day.toString());
-		}
-		case 3:
-		case 4:
-		case 5:
-		case 6:
-		case 7:
-		case 8:
-		case 9:
-		case 10:
-		case 11:
-		case 12:
-			default: return "";
-		}*/
+		return output;
 	}
 	
-	private Date StringToDate(String string_input)
+	private Date stringToDate(String string_input)
 	{
 		SimpleDateFormat df = new SimpleDateFormat("MM/dd/yyyy");
 		Date date_output = null;
@@ -718,8 +663,6 @@ public class ClerkModel {
 		try
 		{
 			date_output = df.parse(string_input);
-			//System.out.println(date);
-			//System.out.println(df.format(date));
 		}
 		catch (ParseException e) 
 		{
@@ -729,8 +672,8 @@ public class ClerkModel {
 		return date_output;
 	}
 	
-	private String DateToString(Date date_input)
-	{
+	private String dateToString(Date date_input) {
+		
 		String string_output = null;
 		
 		DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
@@ -739,8 +682,8 @@ public class ClerkModel {
 		return string_output;
 	}
 	
-	private Date addDate(Date inputDate, int amount_add)
-	{
+	private Date addDate(Date inputDate, int amount_add) {
+		
 		Date result;
 		
 		Calendar c = Calendar.getInstance(); 
