@@ -350,7 +350,7 @@ public class library implements ActionListener
     		System.out.print("2.  Check Out Item\n");
     		System.out.print("3.  Process Return\n");
     		System.out.print("4.  Check Overdue Items\n");
-    		System.out.print("5.  Switch User\n");
+    		System.out.print("5.  Back To Main Menu\n");
     		System.out.print("6.  Quit\n>> ");
 
     		choice = Integer.parseInt(in.readLine());
@@ -412,7 +412,7 @@ public class library implements ActionListener
     		System.out.print("1.  Add Book\n");
     		System.out.print("2.  Generate Report - Checked Out Books\n");
     		System.out.print("3.  Generate Report - Popular Books\n");
-    		System.out.print("4.  Switch User\n");
+    		System.out.print("4.  Back to Main Menu\n");
     		System.out.print("5.  Quit\n>> ");
 
     		choice = Integer.parseInt(in.readLine());
@@ -1240,12 +1240,10 @@ registered as "on hold" and a message is send to the borrower who made the hold 
 					}
 				}
 				
-				System.out.println("Book Added");
+				System.out.println("Book Return Processed");
 			}
 			
-			in.close();
-			System.out.println("\nGoodBye! \n\n");
-			System.exit(0);
+			selectClerk();
 		}
 		catch (IOException e)
 		{

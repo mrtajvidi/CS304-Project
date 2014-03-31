@@ -216,78 +216,116 @@ public class ClerkModel {
 		ResultSet rs;
 		Statement stmt;
 
-		String bid;
-		DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+		Integer bid = 0;
+		DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
 		java.util.Date today = Calendar.getInstance().getTime();        
 
 		String inDate = df.format(today);
-		
-		float amount;
+		String outDate = null;
 		
 		int borid = 0;
 		try{
 			stmt = con.createStatement();
-			rs = stmt.executeQuery("SELECT borid FROM borrowing WHERE callnumber = '" + callNumber + "' and copyNo = '" + copyNo +"'");
+			rs = stmt.executeQuery("SELECT bid, borid, outDate FROM borrowing WHERE callnumber = "+ callNumber + " and copyNo = " + copyNo);
 			
-			borid = rs.getInt("borid");
+			while(rs.next()){
+
+				bid = rs.getInt("bid");
+				System.out.printf("bid: " + bid);
+				
+				borid = rs.getInt("borid");
+				System.out.printf("  borid: " + borid);
+				
+				outDate = rs.getString("outDate");
+				System.out.printf("  outdate: " + outDate);
+				
+				System.out.println(" ");
+			}
+			
+			stmt.close();
 			
 		}catch (SQLException e) {
 			System.out.println("Message: " + e.getMessage());
 		}
 				
-		String issuedDate = null;
+		String dueDate = ComputeDueDate(bid, outDate, con);
+		System.out.println("Due Date : " + dueDate);
+		
+		UpdateStatusIn(callNumber, copyNo,con);
+		UpdateInDate(inDate, callNumber, con);
+		
+		
 		String hold_callNumber = null;
 				
 		try {
-			UpdateStatusIn(callNumber, copyNo,con);
-			UpdateInDate(inDate, callNumber, con);
-
 			stmt = con.createStatement();
+
+			if (isOverdue(inDate, dueDate)){
+				
+				System.out.println("Book Overdue");
+				
+				//if it is overdue assign fine
+				
+				//get fid
+				Integer fid = 0;
+				
+				try {
+					//Borrowing(borid, bid, callNumber, copyNo, outDate, inDate) 
+					stmt = con.createStatement();
+					rs = stmt.executeQuery("SELECT fid FROM fine");
+					
+					while(rs.next())
+					  {
+						fid = rs.getInt("fid");			
+					  }
+					
+					fid ++;
+					
+				    System.out.println("fid: " + fid);
+
+					stmt.close();
+					
+				}catch(SQLException ex){
+				    System.out.println("Message: " + ex.getMessage());
+				}
+				
+				//ASSIGN FINE AMOUNT
+				double amount = 2.50;
+				
+				ps = con.prepareStatement("INSERT INTO Fine VALUES (?,?,?,?,?)");
+				
+				ps.setInt(1, fid);
+				ps.setFloat(2, (float) amount);
+				ps.setString(3, inDate);
+				ps.setString(4, null);
+				ps.setInt(5, borid);
+				
+				ps.executeUpdate();
+				
+				ps.close();
+				
+			}
 			
-			//Check overdue
-			rs = stmt.executeQuery("SELECT issuedDate FROM Fine WHERE borid = " + borid + ";");
+			//check hold requests
 				
-				if(rs.next())
-					issuedDate = rs.getString("issuedDate");
-				
-				stmt.close();
-				
-				if(inDate.equals(issuedDate))
-				{
-					ps = con.prepareStatement("UPDATE Fine SET amount = ?, paidDate = ? WHERE borid = " + borid + ";");
-					
-					//ps.setFloat(1, amount);
-					ps.setString(2, inDate);
-					
-					ps.executeUpdate();
-					
-					ps.close();
-				}
-				
-				rs = stmt.executeQuery("SELECT callNumber FROM holdRequest WHERE callNumber = " + callNumber + ";");
-				
-				if(rs.next())
-					hold_callNumber = rs.getString("issuedDate");
-				
-				stmt.close();
-				if(callNumber.equals(hold_callNumber))
-				{
-					UpdateStatusHold(callNumber, con);
-				}
-			else
-				System.out.println("Record Not found");
+			CheckHoldRequests(callNumber, con);
+			
+			
 		}
 		catch (SQLException e) {
 			System.out.println("Message: " + e.getMessage());
 		}
 	}
 	
+	
+	
+	
 	private void UpdateStatusIn(String callNumber, String copyNo,Connection con) {
 		PreparedStatement ps;
 		
 		try {
 		
-			ps = con.prepareStatement("UPDATE bookcopy SET status = 'in' WHERE callNumber = ?, copyNo = ?");
+			ps = con.prepareStatement("UPDATE bookcopy SET status = 'in' WHERE callNumber = ? and copyNo = ?");
 		
 			ps.setString(1, callNumber);
 			ps.setString(2, copyNo);
@@ -298,23 +336,25 @@ public class ClerkModel {
 		}
 		catch(SQLException e) {
 			System.out.println("Message: " + e.getMessage());
+			System.out.println("UpdateStatusIn");
 		}
 	}
 	
 	private void UpdateStatusHold(String callNumber, Connection con) {
+		PreparedStatement ps;
+		
 		try {
-		String copyNo = callNumber.split(" ")[2];
-		
-		ps = con.prepareStatement("UPDATE bookcopy SET status = 'on-hold' WHERE callNumber = ?, copyNo = ?");
-		
-		ps.setString(1, callNumber);
-		ps.setString(2, copyNo);
-		
-		ps.executeUpdate();
-		
-		con.commit();
-		
-		ps.close();
+			
+			ps = con.prepareStatement("UPDATE bookcopy SET status = 'on-hold' WHERE callNumber = ? and status = ?");
+			
+			ps.setString(1, callNumber);
+			ps.setString(2, "out");
+			
+			ps.executeUpdate();
+			
+			con.commit();
+			
+			ps.close();
 		}
 		catch(SQLException e) {
 			System.out.println("Message: " + e.getMessage());
@@ -335,22 +375,30 @@ public class ClerkModel {
 			}
 			catch(SQLException e) {
 				System.out.println("Message: " + e.getMessage());
+				System.out.println("UpdateInDate");
 			}
 	}
 	
 	private void CheckHoldRequests(String callNumber, Connection con) {
+		ResultSet rs;
+		Statement stmt;
+		List<String> issuedDates = new ArrayList<String>();
+		List<Integer> bid = new ArrayList<Integer>();
+		
 		try {
-		ps = con.prepareStatement("SELECT callNumber FROM holdrequest WHERE callNumber = ?");
-
-	    ps.setString(1, callNumber);
-
-	    ResultSet rs = ps.executeQuery();
-	    
-	    if (rs.next()) {
-	    	UpdateStatusHold(callNumber, con); 
-	    }
-	    else
-	    	return;
+			stmt = con.createStatement();
+			rs = stmt.executeQuery("SELECT issuedDate, bid FROM holdrequest WHERE callNumber = '"+ callNumber + "'");
+			
+		    while (rs.next()) {
+		    	issuedDates.add(rs.getString("issuedDate"));
+		    	bid.add(rs.getInt("bid"));
+		    }
+		    
+		    //CHECK WHO RESERVED THE BOOK FIRST AND EMAIL THEM
+		    
+		    UpdateStatusHold(callNumber, con); 
+		    
+		    System.out.println("BOOK PLACED ON HOLD");
 		}
 		catch (SQLException e) {
 				
@@ -457,7 +505,7 @@ public class ClerkModel {
 			ps.close();
 			}
 			catch (SQLException e) {
-				
+				System.out.println("Message: " + e.getMessage());
 			}
 	}
 	
@@ -493,6 +541,7 @@ public class ClerkModel {
 			return duelist;
 		}
 		catch (SQLException e) {
+			System.out.println("Message: " + e.getMessage());
 			return null;
 		}
 	}
@@ -506,32 +555,90 @@ public class ClerkModel {
 			
 			rs = stmt.executeQuery("SELECT type FROM borrower WHERE bid = " + bid);
 
-			String type;
+			String type = null;
+			
+			while(rs.next()){
 
-			type = rs.getString("type");
+				type = rs.getString("type");
+				System.out.println("type: " + type);
+			
+			}
 				
-			rs = stmt.executeQuery("SELECT bookTimeLimit FROM borrowertype WHERE type = " + type);
+			rs = stmt.executeQuery("SELECT bookTimeLimit FROM borrowertype WHERE type = '" + type +"'");
 
 			Integer timelimit = 0;
 
-			timelimit = rs.getInt("bookTimeLimit");
+			while (rs.next()){
+				timelimit = rs.getInt("bookTimeLimit");
+				System.out.println("Time Limit: " + timelimit);
+			}
+			
+			
 			
 			String date = AdjustDate(outDate, timelimit);
+			
 			return date;
 		}
 		catch (SQLException e) {
+			System.out.println("Message: " + e.getMessage());
 			return null;
+		}
+	}
+	
+	private boolean isOverdue(String inDate, String dueDate){
+		
+		String[] dueDateString = dueDate.split("/");
+		String yearString[] = dueDateString[2].split(" ");
+		Integer yearDue = Integer.valueOf(yearString[0]);
+		System.out.println("yeardue: " + yearDue);
+		Integer monthDue = Integer.valueOf(dueDateString[0]);
+		System.out.println("monthDue: " + monthDue);
+		Integer dayDue = Integer.valueOf(dueDateString[1]);
+		System.out.println("Day Due: " + dayDue);
+		
+		String[] inDateString = inDate.split("/");
+		String yearS[] = inDateString[2].split(" ");
+		Integer yearIn = Integer.valueOf(yearS[0]);
+		System.out.println("yearIn: " + yearIn);
+		Integer monthIn = Integer.valueOf(inDateString[0]);
+		System.out.println("monthIn: " + monthIn);
+		Integer dayIn = Integer.valueOf(inDateString[1]);
+		System.out.println("DayIn: " + dayIn);
+		
+		if ( monthIn > monthDue || yearIn > yearDue){
+			System.out.println("IS OVERDUE");
+			return true;
+		}
+		if (dayIn > dayDue){
+			System.out.println("IS OVERDUE");
+
+			return true;
+		}
+		else{
+			System.out.println("NOT OVERDUE");
+
+			return false;
 		}
 	}
 
 	private String AdjustDate(String outDate, int length) {
 		String date = outDate;
-		String[] strArr = date.split("-");
-		Integer year = Integer.valueOf(strArr[0]);
-		Integer month = Integer.valueOf(strArr[1]);
-		Integer day = Integer.valueOf(strArr[2]);
+		String[] strArr = date.split("/");
+		String yearString[] = strArr[2].split(" ");
+		Integer year = Integer.valueOf(yearString[0]);
+		System.out.println("year: " + year);
+		Integer month = Integer.valueOf(strArr[0]);
+		System.out.println("month: " + month);
+
+		Integer day = Integer.valueOf(strArr[1]);
+		System.out.println("day: " + day);
+
 		
-		switch(month) {
+		day = day + length*7;
+		
+		return ( month.toString() + "/" + day.toString() + "/" + year.toString());
+		
+		/*switch(month) {
 		case 1: if (day + length > 31) {
 			length -= 31 - day;
 		} else {
@@ -555,6 +662,6 @@ public class ClerkModel {
 		case 11:
 		case 12:
 			default: return "";
-		}
+		}*/
 	}
 }
