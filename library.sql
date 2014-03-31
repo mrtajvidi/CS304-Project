@@ -46,8 +46,8 @@ CREATE TABLE Borrowing (
   bid integer NOT NULL,
   callNumber VARCHAR(10) NOT NULL,
   copyNo VARCHAR(3) not null,
-  outDate DATE,
-  inDate DATE,
+  outDate VARCHAR(20),
+  inDate varchar(20),
   FOREIGN KEY (bid) REFERENCES Borrower,
   FOREIGN KEY (callNumber, copyNo) REFERENCES BookCopy (callNumber, copyNo));    
   

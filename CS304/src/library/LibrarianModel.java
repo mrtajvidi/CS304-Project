@@ -19,19 +19,14 @@ public class LibrarianModel {
 	
 	private void addBookStandard(String callNumber, String isbn, String title, String mainAuthor, 
 			String publisher, String yearTemp, String subject,String copyNo, String status, Connection con){
-		/* UPDATES:
-		 * Book (callNumber, isbn, title, mainAuthor, publisher, year )
-		 * HasAuthor (callNumber, name)
-		 * HasSubject (callNumber, subject) 
-		 * BookCopy (callNumber, copyNo, status) */
-		
+
 		int year;
 		
 		PreparedStatement psBook;
 		PreparedStatement psAuthor;
 		PreparedStatement psSubject;
 		PreparedStatement psCopy;
-		
+
 		boolean moreCopies = true;
 		String copyVal; 
 		
@@ -48,11 +43,12 @@ public class LibrarianModel {
 		  psCopy.setString(1, callNumber);
 
 		  psBook.setString(2, isbn);
+
 		  psBook.setString(3, title);
-		  
+
 		  psBook.setString(4, mainAuthor);
 		  psAuthor.setString(2, mainAuthor);
-		  
+
 		  if (yearTemp.length() == 0)
 		  {
 		      psBook.setNull(6, java.sql.Types.INTEGER);
@@ -62,8 +58,7 @@ public class LibrarianModel {
 		      year = Integer.parseInt(yearTemp);
 		      psBook.setInt(6, year);
 		  }
-		  
-
+		  	  
 		  if (publisher.length() == 0)
 	          {
 		      psBook.setString(5, null);
@@ -72,17 +67,18 @@ public class LibrarianModel {
 		  {
 		      psBook.setString(5, publisher);
 		  }
-		  
+
 		  psSubject.setString(2, subject);
-		  
+
 		  psCopy.setString(2, copyNo);
+
 		  psCopy.setString(3, status);
 			 
 		  psBook.executeUpdate();
 		  psAuthor.executeUpdate();
 		  psSubject.executeUpdate();
 		  psCopy.executeUpdate();
-
+		  
 		  // commit work 
 		  con.commit();
 
@@ -181,8 +177,10 @@ public class LibrarianModel {
 		try
 		{
 		  stmt = con.createStatement();
-
-		  rsStatus = stmt.executeQuery("SELECT BookCopy.callNumber, BookCopy.copyNo, Status, Borid, Outdate, Indate FROM BookCopy, Borrowing WHERE BookCopy.callNumber = Borrowing.callNumber and BookCopy.copyNo = Borrowing.copyNo and status = 'out'");
+		 
+		  rsStatus = stmt.executeQuery("SELECT BookCopy.callNumber, BookCopy.copyNo, Status, Borid, Outdate, Indate "
+		  		+ "FROM BookCopy, Borrowing "
+		  		+ "WHERE BookCopy.callNumber = Borrowing.callNumber and BookCopy.copyNo = Borrowing.copyNo and status = 'out'");
 
 		  // get info on ResultSet
 		  ResultSetMetaData rsmd = rsStatus.getMetaData();
@@ -205,15 +203,12 @@ public class LibrarianModel {
 
 		  while(rsStatus.next())
 		  {
-		      // for display purposes get everything from Oracle 
-		      // as a string
-
-		      // simplified output formatting; truncation may occur
-
-		      callNumber = rsStatus.getString("BookCopy.callNumber");
+			  //BookCopy.callNumber, BookCopy.copyNo, Status, Borid, Outdate, Indate
+			  
+		      callNumber = rsStatus.getString("callNumber");
 		      System.out.printf("%-20.20s", callNumber);
 
-		      copyNo = rsStatus.getString("BookCopy.copyNo");
+		      copyNo = rsStatus.getString("copyNo");
 		      System.out.printf("%-10.10s", copyNo);
 
 		      status = rsStatus.getString("status");
@@ -228,6 +223,10 @@ public class LibrarianModel {
 		      indate = rsStatus.getString("indate");
 		      System.out.printf("%-15.15s", indate);
 		      
+		      System.out.println(" ");
+		      
+			  //CheckedOut(String callNumber, String copyNumber, String status, String borid, String outDate, String inDate) 
+
 		      outStatus.add(new CheckedOut(callNumber, copyNo, status, borid, outdate, indate));
 		  }
 	 

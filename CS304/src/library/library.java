@@ -16,6 +16,15 @@ import java.lang.reflect.Method;
 
 
 
+
+
+
+
+
+
+
+
+
 // for the login window
 import javax.swing.*;
 
@@ -42,7 +51,8 @@ public class library implements ActionListener
     private JPasswordField passwordField;
     private JFrame mainFrame;
     
-    private String user;
+    //private String user;
+	BorrowerModel b = new BorrowerModel();
 
 
     /*
@@ -149,14 +159,13 @@ public class library implements ActionListener
      */ 
     private boolean connect(String username, String password)
     {
-      //String connectURL = "jdbc:oracle:thin:@localhost:1522:ug"; 
-    	String connectURL = "jdbc:mysql://localhost:3306/test";
+      String connectURL = "jdbc:oracle:thin:@localhost:1522:ug"; 
+
       try 
       {
 	con = DriverManager.getConnection(connectURL,username,password);
 
-	//System.out.println("\nConnected to Oracle!");
-	System.out.println("Connected to mySQL!");
+	System.out.println("\nConnected to Oracle!");
 	return true;
       }
       catch (SQLException ex)
@@ -235,7 +244,7 @@ public class library implements ActionListener
 	    }
 
 	    con.close();
-            in.close();
+        in.close();
 	    System.out.println("\nGood Bye!\n\n");
 	    System.exit(0);
 	}
@@ -289,17 +298,19 @@ public class library implements ActionListener
         		{
         		   case 1:  borrowerSearch(); break;
         		   case 2:  checkAccount(); break;
+        		   //case 2: 	checkCopies(); break;
         		   case 3:  placeHold(); break;
         		   case 4:  payFine(); break;
-        		   case 5: 	showMenu(); break;
-        		   case 6:  quit = true;
+        		   case 5: 	switchUser(); break;
+        		   case 6:  showMenu(); break;
         		}
         	    }
 
         	    con.close();
-                    in.close();
-        	    System.out.println("\nGood Bye!\n\n");
-        	    System.exit(0);
+                //in.close();
+        	    //System.out.println("\nGood Bye!\n\n");
+        	    //System.exit(0);
+                 
         	}
         	catch (IOException e)
         	{
@@ -358,9 +369,10 @@ public class library implements ActionListener
     	    }
 
     	    con.close();
-                in.close();
-    	    System.out.println("\nGood Bye!\n\n");
-    	    System.exit(0);
+            //in.close();
+    	    //System.out.println("\nGood Bye!\n\n");
+    	    //System.exit(0);
+            showMenu();
     	}
     	catch (IOException e)
     	{
@@ -418,9 +430,8 @@ public class library implements ActionListener
     	    }
 
     	    con.close();
-                in.close();
-    	    System.out.println("\nGood Bye!\n\n");
-    	    System.exit(0);
+           // in.close();
+            showMenu();
     	}
     	catch (IOException e)
     	{
@@ -476,9 +487,7 @@ public class library implements ActionListener
     		}
     		
     		con.close();
-    		in.close();
-    		System.out.println("\nGood Bye!\n\n");
-    		System.exit(0);
+    		selectLibrarian();
     	}
     	catch (IOException e)
     	{
@@ -500,10 +509,47 @@ public class library implements ActionListener
     	}
     	
     }
+    private void switchUser(){
+    	int user;
+    	try{
+    		System.out.println("Enter BID: ");
+    		user = Integer.parseInt(in.readLine());
+    		
+    		//BorrowerModel b = new BorrowerModel();
+    		Class c = b.getClass();
+    		
+    		Method userSwitch= c.getDeclaredMethod("setUser", Integer.class);
+	        userSwitch.setAccessible(true);
+	        userSwitch.invoke(b, user);
+	        
+	        Method userRetrieve= c.getDeclaredMethod("getUser");
+	        userRetrieve.setAccessible(true);
+	        System.out.println("CURRENT USER: " + userRetrieve.invoke(b));	
+    	}
+    	
+    	catch (IOException e)
+    	{
+    	    System.out.println("IOException!");
+
+    	    try
+    	    {
+    		con.close();
+    		System.exit(-1);
+    	    }
+    	    catch (SQLException ex)
+    	    {
+    		 System.out.println("Message: " + ex.getMessage());
+    	    }
+    	} catch (NoSuchMethodException x) {
+		    x.printStackTrace();
+		} catch (InvocationTargetException x) {
+		    x.printStackTrace();
+		} catch (IllegalAccessException x) {
+		    x.printStackTrace();
+		}
+    }
     
-/*#################################################################################################
-									BORROWER MODEL
-###################################################################################################*/ 
+    
     
     /*Search for books using keyword search on titles, authors and subjects. The result is a list 
      *of books that match the search together with the number of copies that are in and out. 
@@ -514,11 +560,12 @@ public class library implements ActionListener
     private void borrowerSearch(){
     	boolean quit;
     	String keyword;
-    	BorrowerModel b = new BorrowerModel();
+    	//BorrowerModel b = new BorrowerModel();
 		Class c = b.getClass();
 		ArrayList<Match> books = new ArrayList<Match>();
+		Object tempBooks;
     	quit = false;
-    	
+
     	//RETURN TYPES
     	
     	try{
@@ -532,9 +579,26 @@ public class library implements ActionListener
 	    		}else{
 	    			
 	    			try{    
-	    		    	Method findKeyword= c.getDeclaredMethod("findKeyword", String.class);
+	    		    	Method findKeyword= c.getDeclaredMethod("findKeyword", String.class, Connection.class);
 	    		        findKeyword.setAccessible(true);
-	    		        findKeyword.invoke(b, keyword);
+	    		        tempBooks = findKeyword.invoke(b, keyword, con);
+	    		        books = (ArrayList<Match>) tempBooks;
+	    		        
+	    		        if (books.size() == 0){
+	    		        	System.out.println("No Results Match Search");
+	    		        }else{
+		    		        //callNumber, title, mainAuthor, isbn, numOfCopiesIn, numOfCopiesOut
+		    		        
+		    		        System.out.printf("%-15s %-15s %-15s %-15s %-15s %-15s", "CallNumber", "Title", "Main Author","ISBN" ,"Num Copies In", "Num Copies Out");
+		    		        System.out.println(" ");
+		    		        
+		    		        for (int i = 0; i< books.size(); i++){
+		    		        	Match temp = books.get(i);
+			    		        System.out.printf("%-15s %-15s %-15s %-15s %-15s %-15s", temp.callNumber, temp.title,temp.mainAuthor,temp.isbn ,temp.numOfCopiesIn, temp.numOfCopiesOut);
+	
+		    		        	System.out.println(" ");
+		    		        }
+	    		        }
 	    		        
 	    			}catch (NoSuchMethodException x) {
 	    			    x.printStackTrace();
@@ -547,9 +611,8 @@ public class library implements ActionListener
 	    		}
     		}
 	    	
-	    	in.close();
-    	    System.out.println("\nGood Bye!\n\n");
-    	    System.exit(0);
+	    	//in.close();
+	    	selectBorrower();
     	}
     	catch (IOException e)
     	{
@@ -565,34 +628,183 @@ public class library implements ActionListener
     		 System.out.println("Message: " + ex.getMessage());
     	    }
     	}
+    	    	
+    	
     }
     
-    
+
+	/**Check his/her account. 
+	 * The system will display the items the borrower has currently borrowed and not yet returned,
+	 * any outstanding fines and the hold requests that have been placed by the borrower
+	 */
     private void checkAccount(){
-    	//CheckAccountBorrows(Integer bid)
-    	boolean quit;
-    	String bid;
-    	BorrowerModel b = new BorrowerModel();
+      	boolean quit;
+    	//String bid;
+      	Integer bid;
+      	
 		Class c = b.getClass();
+		ArrayList<Match> books = new ArrayList<Match>();
 		
+		List<Triple<String,String,String>> borrows = new ArrayList<Triple<String,String,String>>();
+		List<Fine> fines = new ArrayList<Fine>();
+		List<HoldRequest> holdrequests = new ArrayList<HoldRequest>();
+		
+		Object tempBorrows;
+		Object tempFines;
+		Object tempRequests;
     	quit = false;
-    	
+
     	//RETURN TYPES
     	
     	try{
 	    	while (!quit){
-	    		System.out.println("Enter Borrower ID (or type quit to return to menu): ");
+	    		System.out.println("Type quit to leave account: ");
 	
-	    		bid = in.readLine(); //CONVERT TO INT
+	    		//bid = in.readLine();
+
+	    		if(in.readLine().equals("quit")){
+	    			quit = true;
+	    		}else{
+	    			
+	    			try{    
+	    				Method userRetrieve= c.getDeclaredMethod("getUser");
+	    		        userRetrieve.setAccessible(true);
+	    		        bid = (Integer) userRetrieve.invoke(b);	
+	    		        System.out.println("BID: " + bid);
+	    		        
+	    		    	Method checkBorrows= c.getDeclaredMethod("CheckAccountBorrows", Integer.class, Connection.class);
+	    		        checkBorrows.setAccessible(true);
+	    		        //tempBooks = checkAccount.invoke(b, Integer.parseInt( bid , con);
+	    		        tempBorrows = checkBorrows.invoke(b, bid , con);
+	    		        
+	    		        Method checkFines= c.getDeclaredMethod("CheckAccountFines", Integer.class, Connection.class);
+	    		        checkFines.setAccessible(true);
+	    		        tempFines = checkFines.invoke(b, bid , con);
+	    		        
+	    		        Method checkRequests= c.getDeclaredMethod("CheckAccountHoldRequests", Integer.class, Connection.class);
+	    		        checkRequests.setAccessible(true);
+	    		        tempRequests = checkRequests.invoke(b, bid , con);
+	    		        
+	    		        System.out.println(" ");
+	    		        
+	    		        borrows = (List<Triple<String,String,String>>) tempBorrows;
+    		        	System.out.println("BOOKS BORROWED:");
+	    		        
+	    		        if (borrows.size() == 0){
+	    		        	System.out.println("No Books Currently Borrowed");
+	    		        }else{
+	    		        	//(rs.getString("title"), rs.getString("mainAuthor"), rs.getString("outDate"));
+		    		        
+		    		        System.out.printf("%-15s %-15s %-15s", "Title", "Main Author","Out Date");
+		    		        System.out.println(" ");
+		    		        
+		    		        for (int i = 0; i< borrows.size(); i++){
+		    		        	Triple temp = borrows.get(i);
+			    		        System.out.printf("%-15s %-15s %-15s", temp.x, temp.y, temp.z );
+	
+		    		        	System.out.println(" ");
+		    		        }
+	    		        }
+	    		        
+	    		        
+	    		        fines = (ArrayList<Fine>) tempFines;
+	    		        
+	    		        System.out.println(" ");
+    		        	System.out.println("FINES:");
+	    		        
+	    		        if (fines.size() == 0){
+	    		        	System.out.println("No Outstanding Fines");
+	    		        }else{
+	    		        	//Integer fine, Double amount, Date issdate, String title, String callNum
+		    		        
+		    		        System.out.printf("%-15s %-15s %-15s %-15s %-15s", "Fine ID", "Amount","Issue Date", "Book Title", "Book Call Number");
+		    		        System.out.println(" ");
+		    		        
+		    		        for (int i = 0; i< fines.size(); i++){
+		    		        	Fine temp = fines.get(i);
+			    		        System.out.printf("%-15s %15s %-15s %-15s %-15s", temp.fine, temp.amount, temp.issuedDate, temp.title, temp.callNumber );
+	
+		    		        	System.out.println(" ");
+		    		        }
+	    		        }
+	    		        
+	    		        
+	    		        holdrequests = (ArrayList<HoldRequest>) tempRequests;
+	    		        
+	    		        System.out.println(" ");
+    		        	System.out.println("HOLD REQUESTS:");
+	    		        
+	    		        if (holdrequests.size() == 0){
+	    		        	System.out.println("No Current Holds");
+	    		        }else{
+	    		        	//HoldRequest(String title, String callNum, String issDate)
+		    		        
+		    		        System.out.printf("%-15s %-15s %-15s", "Book Title", "Book Call Number","Issue Date");
+		    		        System.out.println(" ");
+		    		        
+		    		        for (int i = 0; i< holdrequests.size(); i++){
+		    		        	HoldRequest temp = holdrequests.get(i);
+			    		        System.out.printf("%-15s %15s %-15s", temp.title, temp.callNumber, temp.issuedDate );
+	
+		    		        	System.out.println(" ");
+		    		        }
+	    		        }
+
+	    			}catch (NoSuchMethodException x) {
+	    			    x.printStackTrace();
+	    			} catch (InvocationTargetException x) {
+	    			    x.printStackTrace();
+	    			} catch (IllegalAccessException x) {
+	    			    x.printStackTrace();
+	    			}
+	    			
+	    		}
+    		}
+	    	
+	    	//in.close();
+	    	selectBorrower();
+    	}
+    	catch (IOException e)
+    	{
+    	    System.out.println("IOException!");
+
+    	    try
+    	    {
+    		con.close();
+    		System.exit(-1);
+    	    }
+    	    catch (SQLException ex)
+    	    {
+    		 System.out.println("Message: " + ex.getMessage());
+    	    }
+    	}
+    	    
+    }
+    
+    
+    private void checkCopies(){
+      	boolean quit;
+    	String bid;
+    	//BorrowerModel b = new BorrowerModel();
+		Class c = b.getClass();
+    	quit = false;
+
+    	//RETURN TYPES
+    	
+    	try{
+	    	while (!quit){
+	    		System.out.println("Enter Callnumber (or type quit to leave search): ");
+	
+	    		bid = in.readLine();
 
 	    		if(bid.equals("quit")){
 	    			quit = true;
 	    		}else{
 	    			
 	    			try{    
-	    		    	Method checkAccount= c.getDeclaredMethod("CheckAccountBorrows", Integer.class);
-	    		    	checkAccount.setAccessible(true);
-	    		    	checkAccount.invoke(b, bid);
+	    		    	Method checkAccount= c.getDeclaredMethod("showBookCopyTable", Connection.class);
+	    		        checkAccount.setAccessible(true);
+	    		        checkAccount.invoke(b, con);
 	    		        
 	    			}catch (NoSuchMethodException x) {
 	    			    x.printStackTrace();
@@ -606,8 +818,7 @@ public class library implements ActionListener
     		}
 	    	
 	    	in.close();
-    	    System.out.println("\nGood Bye!\n\n");
-    	    System.exit(0);
+	    	selectBorrower();
     	}
     	catch (IOException e)
     	{
@@ -622,25 +833,157 @@ public class library implements ActionListener
     	    {
     		 System.out.println("Message: " + ex.getMessage());
     	    }
-    	}	    	
-    	
+    	}
+    	    
     }
     
     
+    /**
+     * Place a hold request for a book that is out. When the item is returned, the system sends an 
+     * email to the borrower and informs the library clerk to keep the book out of the shelves. 
+     * 
+     * USER INPUTS TITLE OR CALLNUMBER
+     * PROGRAM ENTERS INFORMATION INTO HOLD REQUEST TABLE 
+     * PROGRAM THEN MUST CHECK WHEN A USER RETURNS A BOOK IF THERE IS A HOLD REQUEST ON IT --CLERK TRANSACTION
+     */
     private void placeHold(){
+    	//PlaceHoldRequest(Integer hid, Integer bid, String callNumber, Date issuedDate, Connection con) {
+    	//TABLE: HoldRequest(hid, bid, callNumber, issuedDate) 
+    	
+    	boolean quit;
+    	String hold;
+    	String bid;
+    	String searchMethod;
+    	//BorrowerModel b = new BorrowerModel();
+		Class c = b.getClass();
+    	quit = false;
+
+    	//RETURN TYPES
+    	
+    	try{
+	    	while (!quit){
+	    		System.out.println("Enter Borrower ID (or type quit to leave search): ");
+	    		
+	    		bid = in.readLine();
+	    		
+	    		System.out.println("Enter t to place hold by title or enter c to place hold by callnumber (or type quit to leave search): ");
+	
+	    		hold = in.readLine();
+
+	    		if(hold.equals("quit")){
+	    			quit = true;
+	    		}else{
+	    			
+	    			if (hold.equals("t")){
+	    				searchMethod = "title";
+	    				System.out.println("Enter a Book Title: ");
+	    				hold = in.readLine();
+	    			}
+	    			else if (hold.equals("c")){
+	    				searchMethod = "call";
+	    				System.out.println("Enter a Call Number: ");
+	    				hold = in.readLine();
+	    			}
+	    			else{
+	    				System.out.println("Please enter a valid search method");
+	    			}
+	    			
+	    			try{    
+	    		    	Method placeHold= c.getDeclaredMethod("PlaceHoldRequest", Integer.class, String.class, Connection.class);
+	    		        placeHold.setAccessible(true);
+	    		        placeHold.invoke(b, Integer.parseInt( bid ), hold, con);
+	    			}catch (NoSuchMethodException x) {
+	    			    x.printStackTrace();
+	    			} catch (InvocationTargetException x) {
+	    			    x.printStackTrace();
+	    			} catch (IllegalAccessException x) {
+	    			    x.printStackTrace();
+	    			}
+	    			
+	    		}
+    		}
+	    	
+	    	in.close();
+    	    selectBorrower();
+    	}
+    	catch (IOException e)
+    	{
+    	    System.out.println("IOException!");
+
+    	    try
+    	    {
+    		con.close();
+    		System.exit(-1);
+    	    }
+    	    catch (SQLException ex)
+    	    {
+    		 System.out.println("Message: " + ex.getMessage());
+    	    }
+    	}
+    	
 	 
     }
     
-    
+    //Fine (fid, amount, issuedDate, paidDate, borid) 
+    //ONLY PAY FINES IN ENTIRETY RIGHT NOW
  	private void payFine(){
- 		
- 	}
- 	
-/*#################################################################################################
-										CLERK MODEL
-###################################################################################################*/
+    	boolean quit;
+    	String bid;
+    	//BorrowerModel b = new BorrowerModel();
+		Class c = b.getClass();
+    	quit = false;
 
- 	private void addBorrower(){
+    	//RETURN TYPES
+    	
+    	try{
+	    	while (!quit){
+	    		System.out.println("Enter bid (or type quit to leave search): ");
+	
+	    		bid = in.readLine();
+
+	    		if(bid.equals("quit")){
+	    			quit = true;
+	    		}else{
+	    			
+	    			try{    
+	    		    	Method payFines= c.getDeclaredMethod("payFine", Integer.class, Connection.class);
+	    		        payFines.setAccessible(true);
+	    		        payFines.invoke(b, Integer.parseInt( bid ) ,con);
+	    		        
+	    			}catch (NoSuchMethodException x) {
+	    			    x.printStackTrace();
+	    			} catch (InvocationTargetException x) {
+	    			    x.printStackTrace();
+	    			} catch (IllegalAccessException x) {
+	    			    x.printStackTrace();
+	    			}
+	    			
+	    		}
+    		}
+	    	
+	    	in.close();
+	    	selectBorrower();
+    	}
+    	catch (IOException e)
+    	{
+    	    System.out.println("IOException!");
+
+    	    try
+    	    {
+    		con.close();
+    		System.exit(-1);
+    	    }
+    	    catch (SQLException ex)
+    	    {
+    		 System.out.println("Message: " + ex.getMessage());
+    	    }
+    	}
+ 	}
+
+/*#################################################################################################
+				CLERK MODEL
+###################################################################################################*/
+	private void addBorrower(){
  		boolean quit;
 		
 		String bid, password, name, address, phone, emailAddress, sinOrStNo, expiryDate, type;
@@ -696,11 +1039,11 @@ public class library implements ActionListener
 				if(sinOrStNo.equals("quit"))
 					quit = true;
 				
-				System.out.println("Enter borrower expiry date: \n");
-				expiryDate = in.readLine();
+				//System.out.println("Enter borrower expiry date: \n");
+				//expiryDate = in.readLine();
 				
-				if(expiryDate.equals("quit"))
-					quit = true;
+				//if(expiryDate.equals("quit"))
+				//	quit = true;
 				
 				System.out.println("Enter borrower account type: \n");
 				type = in.readLine();
@@ -711,10 +1054,13 @@ public class library implements ActionListener
 				if(!quit)
 				{
 					try{
+						//	private void AddBorrower(String bid_temp, String password, String name, String address, String phone_temp, String emailAddress, String sinOrStNo_temp, Date expiryDate, String type, Connection con) {
+
 						Method AddBorrower = c.getDeclaredMethod("AddBorrower", String.class, String.class, String.class, 
-								String.class, String.class, String.class, String.class, String.class, String.class,	Connection.class);
+								String.class, String.class, String.class, String.class, String.class,Connection.class);
 						AddBorrower.setAccessible(true);
-						AddBorrower.invoke(clerkModel, bid, password, name, address, phone, emailAddress, sinOrStNo, expiryDate, type, con);
+						AddBorrower.invoke(clerkModel, bid, password, name, address, phone, emailAddress, sinOrStNo, type, con);
+						
 					}
 					catch (NoSuchMethodException x)
 					{
@@ -730,12 +1076,10 @@ public class library implements ActionListener
 					}
 				}
 				
-				System.out.println("Book Added");
+				
 			}
 			
-			in.close();
-			System.out.println("\nGoodBye! \n\n");
-			System.exit(0);
+			selectClerk();
 		}
 		catch (IOException e)
 		{
@@ -754,11 +1098,107 @@ public class library implements ActionListener
 		
  	}
 
-
+ 	/**
+ 	 * Check-out items borrowed by a borrower. To borrow items, borrowers provide their card 
+ 	 * number and a list with the call numbers of the items they want to check out. 
+ 	 * 
+ 	 * The system determines if the borrower's account is valid and if the library items are available for 
+ 	 * borrowing. Then it creates one or more borrowing records and prints a note with the 
+ 	 * items and their due day (which is given to the borrower). 
+ 	 */
  	private void checkOutItem(){
+    	boolean quit;
+    	String bid;
+    	
+    	ClerkModel b = new ClerkModel();
+		Class c = b.getClass();
+    	quit = false;
+    	
+    	List<String> callNumbers = new ArrayList<String>();
+    	Object tempPrint ;
+    	List<String> printCheckedBooks = new ArrayList<String>();
+    	boolean moreBooks = true;
+    	
+    	try{
+	    		bid = null;
+	    				
+	    		while (moreBooks){
+	    			System.out.println("Enter bid (or type quit to leave search): ");
+	    			
+		    		bid = in.readLine();
+	    			
+	    			System.out.println("Enter Book Call Number: ");
+	    			
+	    			callNumbers.add(in.readLine());
+	    			
+	    			System.out.println("More Books? (y/n) ");
+	    			if (in.readLine().equals("n")){
+	    				moreBooks = false;
+	    			}
+	    		}
+	    		
+	    		if(bid.equals("quit")){
+	    			quit = true;
+	    		}else{
+	    			
+	    			try{   
+	    				
+	    		    	Method checkOutBook= c.getDeclaredMethod("CheckOut", Integer.class, String.class, Connection.class);
+	    		        checkOutBook.setAccessible(true);
+	    		        
+	    		        for (int i= 0; i < callNumbers.size(); i++){
+	    		        	tempPrint = checkOutBook.invoke(b, Integer.parseInt( bid ), callNumbers.get(i) ,con);
+	    		        	printCheckedBooks.add((String) tempPrint);
+	    		        }
+	    		        
+	    		        System.out.println(" ");
+	    		        System.out.println("PRINTING CHECKED OUT RECEIPT");
+	    		        
+	    		        for (int j = 0; j<printCheckedBooks.size(); j++){
+	    		        	System.out.println(printCheckedBooks.get(j));
+	    		        }
+	    		        
+	    			}catch (NoSuchMethodException x) {
+	    			    x.printStackTrace();
+	    			} catch (InvocationTargetException x) {
+	    			    x.printStackTrace();
+	    			} catch (IllegalAccessException x) {
+	    			    x.printStackTrace();
+	    			}
+	    			
+	    		}
+    		
+	    	
+	    	selectClerk();
+    	}
+    	catch (IOException e)
+    	{
+    	    System.out.println("IOException!");
+
+    	    try
+    	    {
+    		con.close();
+    		System.exit(-1);
+    	    }
+    	    catch (SQLException ex)
+    	    {
+    		 System.out.println("Message: " + ex.getMessage());
+    	    }
+    	}
+ 	}
+
+/**
+ * Processes a return. When an item is returned, the clerk records the return by providing the 
+item's catalogue number. The system determines the borrower who had borrowed the 
+item and records that the item is "in". If the item is overdue, a fine is assessed for the 
+borrower. If there is a hold request for this item by another borrower, the item is 
+registered as "on hold" and a message is send to the borrower who made the hold request. 
+
+ */
+	private void processReturn(){
  		boolean quit;
 		
-		String borid, bid, callNumber, outDate;
+		String callNumber, copyNo;
  		
 		ClerkModel clerkModel = new ClerkModel();
 		Class c = clerkModel.getClass();
@@ -768,17 +1208,6 @@ public class library implements ActionListener
 		try{
 			while(!quit)
 			{
-				System.out.println("Enter borrowing ID: \n");
-				borid = in.readLine();
-				
-				if(borid.equals("quit"))
-					quit = true;
-				
-				System.out.println("Enter borrower ID: \n");
-				bid = in.readLine();
-				
-				if(bid.equals("quit"))
-					quit = true;
 				
 				System.out.println("Enter callNumber: \n");
 				callNumber = in.readLine();
@@ -786,19 +1215,16 @@ public class library implements ActionListener
 				if(callNumber.equals("quit"))
 					quit = true;
 				
-				System.out.println("Enter outDate: \n");
-				outDate = in.readLine();
+				System.out.println("Enter copyNo: \n");
+				copyNo = in.readLine();
 				
-				if(outDate.equals("quit"))
-					quit = true;
 				
 				if(!quit)
 				{
 					try{
-						Method AddBorrower = c.getDeclaredMethod("AddBorrower", String.class, String.class, String.class, 
-								String.class, Connection.class);
-						AddBorrower.setAccessible(true);
-						AddBorrower.invoke(clerkModel, borid, bid, callNumber, outDate, con);
+						Method Return = c.getDeclaredMethod("ProcessReturn", String.class, String.class, Connection.class);
+						Return.setAccessible(true);
+						Return.invoke(clerkModel, callNumber, copyNo, con);
 					}
 					catch (NoSuchMethodException x)
 					{
@@ -835,11 +1261,6 @@ public class library implements ActionListener
 				System.out.println("Message: " + ex.getMessage());
 			}
 		}
-		
- 	}
-
-	private void processReturn(){
-		
 	}
 	
 	private void checkOverdue(){
@@ -894,6 +1315,9 @@ public class library implements ActionListener
 		}
 		
 	}
+	
+
+	
 
 /*#################################################################################################
  									LIBRARIAN MODEL
@@ -911,6 +1335,9 @@ public class library implements ActionListener
 		try{
 			while(!quit)
 			{
+				System.out.println("Add Another Book? (y/n)");
+				
+				
 				System.out.println("Enter CallNumber: \n");
 				callNumber = in.readLine();
 				
@@ -971,6 +1398,7 @@ public class library implements ActionListener
 						Method addBookStandard = c.getDeclaredMethod("addBookStandard", String.class, String.class, String.class, String.class, String.class, String.class, String.class, String.class, String.class, Connection.class);
 						addBookStandard.setAccessible(true);
 						addBookStandard.invoke(libModel, callNumber,isbn, title, mainAuthor, publisher, yearTemp, subject, copyNo, status, con);
+						System.out.println("Book Added");
 					}
 					catch (NoSuchMethodException x)
 					{
@@ -986,12 +1414,11 @@ public class library implements ActionListener
 					}
 				}
 				
-				System.out.println("Book Added");
+				
 			}
 			
-			in.close();
-			System.out.println("\nGoodBye! \n\n");
-			System.exit(0);
+			selectLibrarian();
+			
 		}
 		catch (IOException e)
 		{
@@ -1058,9 +1485,7 @@ public class library implements ActionListener
 				}
 			}
 			
-			in.close();
-			System.out.println("\nGoodBye! \n\n");
-			System.exit(0);
+			selectLibrarian();
 		}
 		catch (IOException e)
 		{
@@ -1127,9 +1552,7 @@ public class library implements ActionListener
 				}
 			}
 			
-			in.close();
-			System.out.println("\nGoodBye! \n\n");
-			System.exit(0);
+			selectLibrarian();
 		}
 		catch (IOException e)
 		{
@@ -1203,9 +1626,7 @@ public class library implements ActionListener
 				}
 			}
 			
-			in.close();
-			System.out.println("\nGoodBye! \n\n");
-			System.exit(0);
+			selectLibrarian();
 		}
 		catch (IOException e)
 		{
@@ -1233,10 +1654,6 @@ public class library implements ActionListener
 		quit = false;
 		
 		try
-		{
-			while(!quit)
-			{
-				try
 				{
 					Method generateReport_CheckedOut = c.getDeclaredMethod("generateReport_CheckedOut", Connection.class);
 					generateReport_CheckedOut.setAccessible(true);
@@ -1254,26 +1671,9 @@ public class library implements ActionListener
 				{
 					x.printStackTrace();
 				}
-			}
 			
-			in.close();
-			System.out.println("\nGood Bye!\n\n");
-			System.exit(0);
-		}
-		catch (IOException e)
-		{
-			System.out.println("IOException!");
-			
-			try
-			{
-				con.close();
-				System.exit(-1);
-			}
-			catch (SQLException ex)
-			{
-				System.out.println("Message: " + ex.getMessage());
-			}
-		}
+		selectLibrarian();
+
 		
 	}
 	
@@ -1332,9 +1732,7 @@ public class library implements ActionListener
 				}
 			}
 			
-			in.close();
-			System.out.println("\nGoodBye! \n\n");
-			System.exit(0);
+			selectLibrarian();
 		}
 		catch (IOException e)
 		{
@@ -1352,306 +1750,10 @@ public class library implements ActionListener
 		}	
 	}
 	
-	//values must be of the form (?,?,?,?,...,?)
-    private void insertTuple(String table, String values){
-    	PreparedStatement ps;
-    	try{
-    		ps = con.prepareStatement("INSERT INTO"+table +"VALUES" + values);
-    	    ps.executeUpdate();
-
-    		// commit work 
-    	    con.commit();
-
-    		ps.close();
-    	}
-    	catch (SQLException ex)
-    	{
-    	    System.out.println("Message: " + ex.getMessage());
-    	    try 
-    	    {
-    		// undo the insert
-    		con.rollback();	
-    	    }
-    	    catch (SQLException ex2)
-    	    {
-    		System.out.println("Message: " + ex2.getMessage());
-    		System.exit(-1);
-    	    }
-    	}
-    }
-
+ 
     public static void main(String args[])
     {
       library l = new library();
     }
 }
 
-	
-
-//	*private void addNewBook(){
-//		/* UPDATES:
-//		 * Book (callNumber, isbn, title, mainAuthor, publisher, year )
-//		 * HasAuthor (callNumber, name)
-//		 * HasSubject (callNumber, subject) 
-//		 * BookCopy (callNumber, copyNo, status) */
-//
-//		//Book Values
-//		String callNumber;
-//		String isbn;
-//		String title;
-//		String mainAuthor;
-//		String publisher;
-//		int year;
-//		
-//		//HasAuthor Values
-//		String name; 
-//		
-//		//HasSubject Values
-//		String subject;
-//		
-//		//BookCopy Values
-//		String copyNo;
-//		String status;
-//		
-//		PreparedStatement psBook;
-//		PreparedStatement psAuthor;
-//		PreparedStatement psSubject;
-//		PreparedStatement psCopy;
-//		
-//		boolean moreAuthors = true;
-//		String authorVal;
-//		
-//		boolean moreSubjects = true;
-//		String subjectVal;
-//		
-//		boolean moreCopies = true;
-//		String copyVal; 
-//		
-//		try
-//		{
-//		  psBook = con.prepareStatement("INSERT INTO Book VALUES (?,?,?,?,?,?)");
-//		  psAuthor = con.prepareStatement("INSERT INTO HasAuthor VALUES (?,?)");
-//		  psSubject = con.prepareStatement("INSERT INTO HasSubject VALUES (?,?)");
-//		  psCopy = con.prepareStatement("INSERT INTO BookCopy VALUES (?,?,?)");
-//		  
-//		  System.out.print("\nCall Number: ");
-//		  callNumber = in.readLine();
-//		  psBook.setString(1, callNumber);
-//		  psAuthor.setString(1, callNumber);
-//		  psSubject.setString(1, callNumber);
-//		  psCopy.setString(1, callNumber);
-//
-//		  System.out.print("\nISBN: ");
-//		  isbn = in.readLine();
-//		  psBook.setString(2, isbn);
-//		  
-//		  System.out.print("\nTitle: ");
-//		  title = in.readLine();
-//		  psBook.setString(3, title);
-//		  
-//		  System.out.print("\nMain Author: ");
-//		  mainAuthor = in.readLine();
-//		  psBook.setString(4, mainAuthor);
-//		  psAuthor.setString(2, mainAuthor);
-//		  
-//		  System.out.print("\nYear: ");
-//		  String yearTemp = in.readLine();
-//		  if (yearTemp.length() == 0)
-//		  {
-//		      psBook.setNull(6, java.sql.Types.INTEGER);
-//		  }
-//		  else
-//		  {
-//		      year = Integer.parseInt(yearTemp);
-//		      psBook.setInt(6, year);
-//		  }
-//
-//		  System.out.print("\nPublisher: ");
-//		  publisher = in.readLine();
-//		  
-//		  if (publisher.length() == 0)
-//	          {
-//		      psBook.setString(5, null);
-//		  }
-//		  else
-//		  {
-//		      psBook.setString(5, publisher);
-//		  }
-//		  
-//		  System.out.print("\nSubject: ");
-//		  subject = in.readLine();
-//		  psSubject.setString(2, subject);
-//		  
-//		  System.out.print("\nCopy Number: ");
-//		  copyNo = in.readLine();
-//		  psCopy.setString(2, copyNo);
-//		  
-//		  System.out.print("\nStatus: ");
-//		  status = in.readLine();
-//		  psCopy.setString(3, status);
-//			 
-//		  psBook.executeUpdate();
-//		  psAuthor.executeUpdate();
-//		  psSubject.executeUpdate();
-//		  psCopy.executeUpdate();
-//		  
-//		  while (moreAuthors){
-//			  System.out.print("\nOther Authors? (if yes enter y, or n otherwise): ");
-//			  authorVal = in.readLine();
-//			  
-//			  if(authorVal.equals("y")){
-//				  System.out.print("\nAuthor Name: ");
-//				  name = in.readLine();
-//				  psAuthor.setString(2, name);
-//				  psAuthor.executeUpdate();
-//				  moreAuthors = true;
-//			  }else{
-//				  moreAuthors = false;
-//			  }
-//		  }	
-//		  
-//		  while (moreSubjects){
-//			  System.out.print("\nOther Subjects? (if yes enter y, or n otherwise): ");
-//			  subjectVal = in.readLine();
-//			  
-//			  if(subjectVal.equals("y")){
-//				  System.out.print("\nAdditional Subject: ");
-//				  subject = in.readLine();
-//				  psSubject.setString(2, subject);
-//				  psSubject.executeUpdate();
-//				  moreSubjects = true;
-//			  }else{
-//				  moreSubjects = false;
-//			  }
-//		  }	
-//		  
-//		  while (moreCopies){
-//			  System.out.print("\nOther Copies? (if yes enter y, or n otherwise): ");
-//			  copyVal = in.readLine();
-//			  
-//			  if(copyVal.equals("y")){
-//				  System.out.print("\nAdditional Copy Number: ");
-//				  copyNo = in.readLine();
-//				  psCopy.setString(2, copyNo);
-//				  psCopy.executeUpdate();
-//				  moreCopies = true;
-//			  }else{
-//				  moreCopies = false;
-//			  }
-//		  }	
-//
-//		  // commit work 
-//		  con.commit();
-//
-//		  psBook.close();
-//		  psAuthor.close();
-//		  psSubject.close();
-//		  psCopy.close();
-//		  
-//		}
-//		catch (IOException e)
-//		{
-//		    System.out.println("IOException!");
-//		}
-//		catch (SQLException ex)
-//		{
-//		    System.out.println("Message: " + ex.getMessage());
-//		    try 
-//		    {
-//			// undo the insert
-//			con.rollback();	
-//		    }
-//		    catch (SQLException ex2)
-//		    {
-//			System.out.println("Message: " + ex2.getMessage());
-//			System.exit(-1);
-//		    }
-//		}
-//	}
-
-	
- /* Generate a report with all the books that have been checked out. For each book the report 
-  * shows the date it was checked out and the due date. 
-  * 
-  * The system flags the items that are overdue. 
-  * The items are ordered by the book call number. 
-  * If a subject is provided the report lists only books related to that subject, 
-  * otherwise all the books that are out are listed by the report. 
-  */
-//	private void generateReportCheckedOut(){
-//		//Borrowing(borid, bid, callNumber, copyNo, outDate, inDate) 
-//		//BookCopy (callNumber, copyNo, status) 
-//		
-//		String     callNumber;
-//		String     copyNo;
-//		String     status;
-//		String borid;
-//		String bid;
-//		String outdate;
-//		String indate;
-//		
-//		Statement  stmt;
-//		ResultSet  rsStatus;
-//		ResultSet  rsDate;
-//		
-//		
-//		try
-//		{
-//		  stmt = con.createStatement();
-//
-//		  rsStatus = stmt.executeQuery("SELECT BookCopy.callNumber, BookCopy.copyNo, Status, Borid, Outdate, Indate FROM BookCopy, Borrowing WHERE BookCopy.callNumber = Borrowing.callNumber and BookCopy.copyNo = Borrowing.copyNo and status = 'out'");
-//
-//		  // get info on ResultSet
-//		  ResultSetMetaData rsmd = rsStatus.getMetaData();
-//
-//		  // get number of columns
-//		  int numCols = rsmd.getColumnCount();
-//
-//		  System.out.println(" ");
-//		  
-//		  // display column names;
-//		  for (int i = 0; i < numCols; i++)
-//		  {
-//		      // get column name and print it
-//
-//		      System.out.printf("%-15s", rsmd.getColumnName(i+1));    
-//		  }
-//
-//		  System.out.println(" ");
-//
-//		  while(rsStatus.next())
-//		  {
-//		      // for display purposes get everything from Oracle 
-//		      // as a string
-//
-//		      // simplified output formatting; truncation may occur
-//
-//		      callNumber = rsStatus.getString("BookCopy.callNumber");
-//		      System.out.printf("%-20.20s", callNumber);
-//
-//		      copyNo = rsStatus.getString("BookCopy.copyNo");
-//		      System.out.printf("%-10.10s", copyNo);
-//
-//		      status = rsStatus.getString("status");
-//		      System.out.printf("%-15.15s", status);
-//		      
-//		      borid = rsStatus.getString("borid");
-//		      System.out.printf("%-15.15s", borid);
-//    
-//		      outdate = rsStatus.getString("outdate");
-//		      System.out.printf("%-15.15s", outdate);
-//		     
-//		      indate = rsStatus.getString("indate");
-//		      System.out.printf("%-15.15s", indate);
-//		  }
-//	 
-//		  // close the statement; 
-//		  // the ResultSet will also be closed
-//		  stmt.close();
-//		}
-//		catch (SQLException ex)
-//		{
-//		    System.out.println("Message: " + ex.getMessage());
-//		}
-//		
-//	}
