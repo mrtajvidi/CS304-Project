@@ -6,16 +6,11 @@ public class Match {
 	String isbn;
 	int numOfCopiesIn;
 	int numOfCopiesOut;
-	String mainAuthor;
-	String callNumber;
-	//Match(callNumber, title, mainAuthor, isbn, numOfCopiesIn, numOfCopiesOut)
 
-	public Match(String callNumber, String title, String mainAuthor, String isbn, int in, int out) {
+	public Match(String title, String a, int b, int c) {
 		this.title = title;
-		this.isbn = isbn;
-		numOfCopiesIn = in;
-		numOfCopiesOut = out;
-		this.callNumber = callNumber;
-		this.mainAuthor = mainAuthor;
+		isbn = a;
+		numOfCopiesIn = b;
+		numOfCopiesOut = c;		
 	}
 }
