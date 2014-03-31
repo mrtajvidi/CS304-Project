@@ -145,6 +145,7 @@ public class library implements ActionListener
       {
 	// Load the Oracle JDBC driver
 	DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
+	
       }
       catch (SQLException ex)
       {

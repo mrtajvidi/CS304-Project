@@ -558,36 +558,46 @@ public class ClerkModel {
 	}
 	
 	private List<DueItem> DisplayOverdue(Connection con) {
+		Statement stmt;
+		ResultSet rs;
+		
 		try {
-			ps = con.prepareStatement("SELECT * FROM borrowing");
+			stmt = con.createStatement();
 			
-			ResultSet rs = ps.executeQuery();
+			rs = stmt.executeQuery("SELECT * FROM borrowing");
 			
 			List<DueItem> duelist = new ArrayList<DueItem>();
 			
 			while(rs.next()) {
+				Integer bid = rs.getInt("bid");
+				System.out.printf("%-15.15s", bid);
+				
+				String callNumber = rs.getString("callNumber");
+				System.out.printf("%-20.20s", callNumber);
+				
+				String copyNo = rs.getString("copyNo");
+				System.out.printf("%-10.10s", copyNo);
 
 				String inDate = rs.getString("inDate");
+				System.out.printf("%-15.15s", inDate);
 				
 				String outDate = rs.getString("outDate");
-				
-				Integer bid = rs.getInt("bid");
+				System.out.printf("%-15.15s", outDate);
 
 				String dueDate = ComputeDueDate(bid, outDate, con);
+				System.out.printf("%-15.15s", dueDate);
+				
+				Date dueDate_Date = stringToDate(dueDate);
+				Date inDate_Date = stringToDate(inDate);
 
 				if (inDate != null && inDate.compareTo(dueDate) > 0) {
-					ps = con.prepareStatement("SELECT * FROM book WHERE callNumber = ?");
-					
-					ps.setString(1, rs.getString("callNumber"));
-					
-					ResultSet res = ps.executeQuery();
-					
-					//duelist.add(new DueItem(bid, res.getString("title"), res.getInt("isbn"), outDate, inDate));
+					duelist.add(new DueItem(bid, callNumber, copyNo, outDate, inDate ,dueDate));
 				}
 			}
 			
 			return duelist;
 		}
+		
 		catch (SQLException e) {
 			System.out.println("Message: " + e.getMessage());
 			return null;
