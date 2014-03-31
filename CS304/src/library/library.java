@@ -15,6 +15,7 @@ import java.lang.reflect.Method;
 
 
 
+
 // for the login window
 import javax.swing.*;
 
@@ -500,6 +501,9 @@ public class library implements ActionListener
     	
     }
     
+/*#################################################################################################
+									BORROWER MODEL
+###################################################################################################*/ 
     
     /*Search for books using keyword search on titles, authors and subjects. The result is a list 
      *of books that match the search together with the number of copies that are in and out. 
@@ -631,9 +635,81 @@ public class library implements ActionListener
  	private void payFine(){
  		
  	}
+ 	
+/*#################################################################################################
+										CLERK MODEL
+###################################################################################################*/
 
  	private void addBorrower(){
-	
+ 		boolean quit;
+		
+		String bid, password, name, address, phone, emailAddress, sinOrStNo, expiryDate, type;
+ 		
+		
+		ClerkModel clerkModel = new ClerkModel();
+		Class c = clerkModel.getClass();
+		
+		quit = false;
+		
+		try{
+			while(!quit)
+			{
+				System.out.println("Enter borrower ID: \n");
+				bid = in.readLine();
+				
+				if(bid.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter borrower password: \n");
+				password = in.readLine();
+				
+				if(password.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter borrower name: \n");
+				name = in.readLine();
+				
+				if(name.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter borrower address: \n");
+				address = in.readLine();
+				
+				if(address.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter borrower phone number: \n");
+				phone = in.readLine();
+				
+				if(phone.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter borrower e-mail address: \n");
+				emailAddress = in.readLine();
+				
+				if(emailAddress.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter borrower SIN or StNo: \n");
+				sinOrStNo = in.readLine();
+				
+				if(sinOrStNo.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter borrower expiry date: \n");
+				expiryDate = in.readLine();
+				
+				if(expiryDate.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter borrower account type: \n");
+				type = in.readLine();
+				
+				if(type.equals("quit"))
+					quit = true;
+			}
+		}
+		
  	}
 
 
@@ -649,7 +725,10 @@ public class library implements ActionListener
 	private void checkOverdue(){
 		
 	}
-	
+
+/*#################################################################################################
+ 									LIBRARIAN MODEL
+ ###################################################################################################*/
 	private void addStandard(){
 		boolean quit;
 		
@@ -717,23 +796,28 @@ public class library implements ActionListener
 				if(status.equals("quit"))
 					quit = true;
 				
-				try{
-					Method addBookStandard = c.getDeclaredMethod("addBookStandard", String.class, String.class, String.class, String.class, String.class, Integer.class, String.class, String.class, String.class, Connection.class);
-					addBookStandard.setAccessible(true);
-					addBookStandard.invoke(libModel, callNumber,isbn, title, mainAuthor, publisher, yearTemp, subject, copyNo, status, con);
-				}
-				catch (NoSuchMethodException x)
+				if(!quit)
 				{
-					x.printStackTrace();
+					try{
+						Method addBookStandard = c.getDeclaredMethod("addBookStandard", String.class, String.class, String.class, String.class, String.class, String.class, String.class, String.class, String.class, Connection.class);
+						addBookStandard.setAccessible(true);
+						addBookStandard.invoke(libModel, callNumber,isbn, title, mainAuthor, publisher, yearTemp, subject, copyNo, status, con);
+					}
+					catch (NoSuchMethodException x)
+					{
+						x.printStackTrace();
+					}
+					catch (InvocationTargetException x)
+					{
+						x.printStackTrace();
+					}
+					catch (IllegalAccessException x)
+					{
+						x.printStackTrace();
+					}
 				}
-				catch (InvocationTargetException x)
-				{
-					x.printStackTrace();
-				}
-				catch (IllegalAccessException x)
-				{
-					x.printStackTrace();
-				}
+				
+				System.out.println("Book Added");
 			}
 			
 			in.close();
@@ -782,23 +866,26 @@ public class library implements ActionListener
 				if(name.equals("quit"))
 					quit = true;
 				
-				try
+				if(!quit)
 				{
-					Method addMoreAuthor = c.getDeclaredMethod("addMoreAuthor", String.class, String.class, Connection.class);
-					addMoreAuthor.setAccessible(true);
-					addMoreAuthor.invoke(libModel, callNumber, name, con);
-				}
-				catch (NoSuchMethodException x)
-				{
-					x.printStackTrace();
-				}
-				catch (InvocationTargetException x)
-				{
-					x.printStackTrace();
-				}
-				catch (IllegalAccessException x)
-				{
-					x.printStackTrace();
+					try
+					{
+						Method addMoreAuthor = c.getDeclaredMethod("addMoreAuthor", String.class, String.class, Connection.class);
+						addMoreAuthor.setAccessible(true);
+						addMoreAuthor.invoke(libModel, callNumber, name, con);
+					}
+					catch (NoSuchMethodException x)
+					{
+						x.printStackTrace();
+					}
+					catch (InvocationTargetException x)
+					{
+						x.printStackTrace();
+					}
+					catch (IllegalAccessException x)
+					{
+						x.printStackTrace();
+					}
 				}
 			}
 			
@@ -847,24 +934,27 @@ public class library implements ActionListener
 				
 				if(subject.equals("quit"))
 					quit = true;
-			
-				try
+				
+				if(!quit)
 				{
-					Method addMoreSubject = c.getDeclaredMethod("addMoreSubject", String.class, String.class, Connection.class);
-					addMoreSubject.setAccessible(true);
-					addMoreSubject.invoke(libModel, callNumber, subject, con);
-				}
-				catch (NoSuchMethodException x)
-				{
-					x.printStackTrace();
-				}
-				catch (InvocationTargetException x)
-				{
-					x.printStackTrace();
-				}
-				catch (IllegalAccessException x)
-				{
-					x.printStackTrace();
+					try
+					{
+						Method addMoreSubject = c.getDeclaredMethod("addMoreSubject", String.class, String.class, Connection.class);
+						addMoreSubject.setAccessible(true);
+						addMoreSubject.invoke(libModel, callNumber, subject, con);
+					}
+					catch (NoSuchMethodException x)
+					{
+						x.printStackTrace();
+					}
+					catch (InvocationTargetException x)
+					{
+						x.printStackTrace();
+					}
+					catch (IllegalAccessException x)
+					{
+						x.printStackTrace();
+					}
 				}
 			}
 			
@@ -920,23 +1010,27 @@ public class library implements ActionListener
 				if(status.equals("quit"))
 					quit = true;
 				
-				try
+				if(!quit)
 				{
-					Method addMoreCopy = c.getDeclaredMethod("addMoreCopy", String.class, String.class, String.class, Connection.class);
-					addMoreCopy.setAccessible(true);
-					addMoreCopy.invoke(libModel, callNumber, copyNo, status, con);
-				}
-				catch (NoSuchMethodException x)
-				{
-					x.printStackTrace();
-				}
-				catch (InvocationTargetException x)
-				{
-					x.printStackTrace();
-				}
-				catch (IllegalAccessException x)
-				{
-					x.printStackTrace();
+					try
+					{
+						Method addMoreCopies = c.getDeclaredMethod("addMoreCopies", String.class, String.class, String.class, Connection.class);
+						addMoreCopies.setAccessible(true);
+						addMoreCopies.invoke(libModel, callNumber, copyNo, status, con);
+					}
+					catch (NoSuchMethodException x)
+					{
+						x.printStackTrace();
+					}
+					catch (InvocationTargetException x)
+					{
+						x.printStackTrace();
+					}
+					catch (IllegalAccessException x)
+					{
+						x.printStackTrace();
+					}
+					System.out.println("Book Added\n");
 				}
 			}
 			
@@ -1088,6 +1182,41 @@ public class library implements ActionListener
 			}
 		}	
 	}
+	
+	//values must be of the form (?,?,?,?,...,?)
+    private void insertTuple(String table, String values){
+    	PreparedStatement ps;
+    	try{
+    		ps = con.prepareStatement("INSERT INTO"+table +"VALUES" + values);
+    	    ps.executeUpdate();
+
+    		// commit work 
+    	    con.commit();
+
+    		ps.close();
+    	}
+    	catch (SQLException ex)
+    	{
+    	    System.out.println("Message: " + ex.getMessage());
+    	    try 
+    	    {
+    		// undo the insert
+    		con.rollback();	
+    	    }
+    	    catch (SQLException ex2)
+    	    {
+    		System.out.println("Message: " + ex2.getMessage());
+    		System.exit(-1);
+    	    }
+    	}
+    }
+
+    public static void main(String args[])
+    {
+      library l = new library();
+    }
+}
+
 	
 
 //	*private void addNewBook(){
@@ -1357,42 +1486,3 @@ public class library implements ActionListener
 //		}
 //		
 //	}
-
-	
-
-    //values must be of the form (?,?,?,?,...,?)
-    private void insertTuple(String table, String values){
-    	PreparedStatement ps;
-    	try{
-    		ps = con.prepareStatement("INSERT INTO"+table +"VALUES" + values);
-    	    ps.executeUpdate();
-
-    		// commit work 
-    	    con.commit();
-
-    		ps.close();
-    	}
-    	catch (SQLException ex)
-    	{
-    	    System.out.println("Message: " + ex.getMessage());
-    	    try 
-    	    {
-    		// undo the insert
-    		con.rollback();	
-    	    }
-    	    catch (SQLException ex2)
-    	    {
-    		System.out.println("Message: " + ex2.getMessage());
-    		System.exit(-1);
-    	    }
-    	}
-    }
-
-    
- 
-    public static void main(String args[])
-    {
-      library l = new library();
-    }
-}
-

@@ -120,7 +120,7 @@ public class LibrarianModel {
 		  
 //		  System.out.print("\nStatus: ");
 //		  status = in.readLine();
-		  //psCopy.setString(3, status);
+		  psCopy.setString(3, status);
 			 
 		  psBook.executeUpdate();
 		  psAuthor.executeUpdate();
@@ -178,7 +178,7 @@ public class LibrarianModel {
 		  psBook.close();
 		  psAuthor.close();
 		  psSubject.close();
-		  //psCopy.close();
+		  psCopy.close();
 		  
 		}
 		catch (SQLException ex)
