@@ -24,35 +24,13 @@ public class LibrarianModel {
 		 * HasAuthor (callNumber, name)
 		 * HasSubject (callNumber, subject) 
 		 * BookCopy (callNumber, copyNo, status) */
-
-//		//Book Values
-//		String callNumber;
-//		String isbn;
-//		String title;
-//		String mainAuthor;
-//		String publisher;
+		
 		int year;
-//		
-//		//HasAuthor Values
-//		String name; 
-//		
-//		//HasSubject Values
-//		String subject;
-//		
-//		//BookCopy Values
-//		String copyNo;
-//		String status;
 		
 		PreparedStatement psBook;
 		PreparedStatement psAuthor;
 		PreparedStatement psSubject;
 		PreparedStatement psCopy;
-		
-//		boolean moreAuthors = true;
-//		String authorVal;
-		
-//		boolean moreSubjects = true;
-//		String subjectVal;
 		
 		boolean moreCopies = true;
 		String copyVal; 
@@ -64,28 +42,17 @@ public class LibrarianModel {
 		  psSubject = con.prepareStatement("INSERT INTO HasSubject VALUES (?,?)");
 		  psCopy = con.prepareStatement("INSERT INTO BookCopy VALUES (?,?,?)");
 		  
-//		  System.out.print("\nCall Number: ");
-//		  callNumber = in.readLine();
 		  psBook.setString(1, callNumber);
 		  psAuthor.setString(1, callNumber);
 		  psSubject.setString(1, callNumber);
 		  psCopy.setString(1, callNumber);
 
-//		  System.out.print("\nISBN: ");
-//		  isbn = in.readLine();
 		  psBook.setString(2, isbn);
-		  
-//		  System.out.print("\nTitle: ");
-//		  title = in.readLine();
 		  psBook.setString(3, title);
 		  
-//		  System.out.print("\nMain Author: ");
-//		  mainAuthor = in.readLine();
 		  psBook.setString(4, mainAuthor);
 		  psAuthor.setString(2, mainAuthor);
 		  
-//		  System.out.print("\nYear: ");
-//		  String yearTemp = in.readLine();
 		  if (yearTemp.length() == 0)
 		  {
 		      psBook.setNull(6, java.sql.Types.INTEGER);
@@ -96,11 +63,7 @@ public class LibrarianModel {
 		      psBook.setInt(6, year);
 		  }
 		  
-		  
 
-//		  System.out.print("\nPublisher: ");
-//		  publisher = in.readLine();
-		  
 		  if (publisher.length() == 0)
 	          {
 		      psBook.setString(5, null);
@@ -110,67 +73,15 @@ public class LibrarianModel {
 		      psBook.setString(5, publisher);
 		  }
 		  
-//		  System.out.print("\nSubject: ");
-//		  subject = in.readLine();
 		  psSubject.setString(2, subject);
 		  
-//		  System.out.print("\nCopy Number: ");
-//		  copyNo = in.readLine();
 		  psCopy.setString(2, copyNo);
-		  
-//		  System.out.print("\nStatus: ");
-//		  status = in.readLine();
 		  psCopy.setString(3, status);
 			 
 		  psBook.executeUpdate();
 		  psAuthor.executeUpdate();
 		  psSubject.executeUpdate();
 		  psCopy.executeUpdate();
-		  
-//		  while (moreAuthors){
-//			  System.out.print("\nOther Authors? (if yes enter y, or n otherwise): ");
-//			  //authorVal = in.readLine();
-//			  
-//			  if(authorVal.equals("y")){
-//				  System.out.print("\nAuthor Name: ");
-//				  name = in.readLine();
-//				  psAuthor.setString(2, name);
-//				  psAuthor.executeUpdate();
-//				  moreAuthors = true;
-//			  }else{
-//				  moreAuthors = false;
-//			  }
-//		  }	
-//		  
-//		  while (moreSubjects){
-//			  System.out.print("\nOther Subjects? (if yes enter y, or n otherwise): ");
-//			  subjectVal = in.readLine();
-//			  
-//			  if(subjectVal.equals("y")){
-//				  System.out.print("\nAdditional Subject: ");
-//				  subject = in.readLine();
-//				  psSubject.setString(2, subject);
-//				  psSubject.executeUpdate();
-//				  moreSubjects = true;
-//			  }else{
-//				  moreSubjects = false;
-//			  }
-//		  }	
-//		  
-//		  while (moreCopies){
-//			  System.out.print("\nOther Copies? (if yes enter y, or n otherwise): ");
-//			  copyVal = in.readLine();
-//			  
-//			  if(copyVal.equals("y")){
-//				  System.out.print("\nAdditional Copy Number: ");
-//				  copyNo = in.readLine();
-//				  psCopy.setString(2, copyNo);
-//				  psCopy.executeUpdate();
-//				  moreCopies = true;
-//			  }else{
-//				  moreCopies = false;
-//			  }
-//		  }	
 
 		  // commit work 
 		  con.commit();
@@ -333,7 +244,7 @@ public class LibrarianModel {
 		}	
 	}
 	
-	private List<Popular> find_Popular(String toDate, String fromDate, int n, Connection con)
+	private List<Popular> find_Popular(String year, int n, Connection con)
 	{
 		String title;
 		String callNumber;
@@ -348,7 +259,7 @@ public class LibrarianModel {
 
 		  rsPopular = stmt.executeQuery("SELECT Book.title, Borrowing.callNumber, count(*) AS borrowed_count "
 		  		+ "FROM Borrowing INNER JOIN Book ON (Borrowing.callNumber=Book.callNumber) "
-		  		+ "WHERE Borrowing.outDate between " + fromDate + "AND" + toDate 
+		  		+ "WHERE Borrowing.outDate Like " + year + "% "
 		  		+ "GROU BY Borrowing.callNumber "
 		  		+ "ORDER BY borrowed_count limit" + n + ";");		  
 

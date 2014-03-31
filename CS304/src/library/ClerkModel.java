@@ -15,9 +15,13 @@ public class ClerkModel {
 		
 	}
 	
-	private void AddBorrower(Integer bid, String password, String name, String address, Integer phone, 
-			String emailAddress, Integer sinOrStNo, Date expiryDate, String type) {
+	private void AddBorrower(String bid_temp, String password, String name, String address, String phone_temp, 
+			String emailAddress, String sinOrStNo_temp, Date expiryDate, String type, Connection con) {
 		try {
+			int bid = Integer.parseInt(bid_temp);
+			int phone = Integer.parseInt(phone_temp);
+			int sinOrStNo = Integer.parseInt(sinOrStNo_temp);
+			
 			ps = con.prepareStatement("INSERT INTO borrower VALUES (?,?,?,?,?,?,?,?,?)");
 
 			ps.setInt(1, bid);
@@ -42,52 +46,18 @@ public class ClerkModel {
 
 	}
 	
-	private void CheckOut(Integer borid, Integer bid, String callNumber, Date outDate) {
-		try {
-			//check if borrower account is valid
-			
-			if (CheckAvailable(callNumber)) {
-
-				ps = con.prepareStatement("INSERT INTO borrowing VALUES (?,?,?,?,?,?)");
-
-				String copyNo = callNumber.split(" ")[2];
-
-				ps.setInt(1, borid);
-				ps.setInt(2, bid);
-				ps.setString(3, callNumber);
-				ps.setString(4, copyNo);
-				ps.setDate(5, outDate);
-				ps.setNull(6, Types.DATE);
-
-				ps.executeUpdate();
-
-				con.commit();
-
-				ps.close();
-				
-				Date dueDate = ComputeDueDate(bid, outDate);
-				
-				//return title of item and dueDate
-				
-			} else {
-				// not available
-			}
-		}
-		catch (SQLException e) {
-			
-		}
-	}
+	//CHECK OUT Function HERE!
 	
 	private boolean CheckAvailable(String callNumber) {
 		try {
-		ps = con.prepareStatement("SELECT status FROM bookcopy WHERE callNumber = ?, copyNo = ?");
+		rs = stmt.executeQuery("SELECT status FROM bookcopy WHERE callNumber =" + callNumber);
 		
-		String copyNo = callNumber.split(" ")[2];
+		//String copyNo = callNumber.split(" ")[2];
 		
-		ps.setString(1, callNumber);
-		ps.setString(2, copyNo);
+		//ps.setString(1, callNumber);
+		//ps.setString(2, copyNo);
 		
-		ResultSet rs = ps.executeQuery();
+		//ResultSet rs = ps.executeQuery();
 		
 		if (rs.next()) {
 			if (rs.getString("status").equals("in"))
@@ -98,39 +68,66 @@ public class ClerkModel {
 			return false;
 		}
 		catch (SQLException e) {
+			System.out.println("Message: " + e.getMessage());
 			return false;
 		}
 	}
 	
-	private void ProcessReturn(String callNumber, Date inDate, Integer fid, double amount) {
+	private void ProcessReturn(String callNumber, String copyNo, String inDate, float amount) {
+		int borid = 0;
+		String issuedDate = null;
+		String hold_callNumber = null;
+		
 		try {
-			ps = con.prepareStatement("SELECT bid FROM borrowing WHERE callnumber = ?, inDate = null");
-
-			ps.setString(1, callNumber);
-
-			ResultSet rs = ps.executeQuery();
-			
-			Integer bid = 0;
+			rs = stmt.executeQuery("SELECT borid FROM borrowing WHERE callnumber = " + callNumber + ", copyNo = " + copyNo + ";");
 
 			if (rs.next())
-				bid =  rs.getInt("bid");
-			else {
+				borid =  rs.getInt("bid");
+			
+			stmt.close();
+			
+			if(borid != 0)
+			{
+				UpdateStatusIn(callNumber);
+				UpdateInDate(inDate, callNumber);
 
+				//Check overdue
+				rs = stmt.executeQuery("SELECT issuedDate FROM Fine WHERE borid = " + borid + ";");
+				
+				if(rs.next())
+					issuedDate = rs.getString("issuedDate");
+				
+				stmt.close();
+				
+				if(inDate.equals(issuedDate))
+				{
+					ps = con.prepareStatement("UPDATE Fine SET amount = ?, paidDate = ? WHERE borid = " + borid + ";");
+					
+					ps.setFloat(1, amount);
+					ps.setString(2, inDate);
+					
+					ps.executeUpdate();
+					
+					ps.close();
+				}
+				
+				rs = stmt.executeQuery("SELECT callNumber FROM holdRequest WHERE callNumber = " + callNumber + ";");
+				
+				if(rs.next())
+					hold_callNumber = rs.getString("issuedDate");
+				
+				stmt.close();
+				if(callNumber.equals(hold_callNumber))
+				{
+					UpdateStatusHold(callNumber);
+				}
+			
 			}
-
-			UpdateStatusIn(callNumber);
-			UpdateInDate(inDate, callNumber);
-
-			if(CheckOverdue(bid, callNumber)) {
-				AssessFine(bid, callNumber, fid, amount, inDate);
-			} else {
-				//RemoveBorrowingRecord();
-			}
-
-			CheckHoldRequests(callNumber);
+			else
+				System.out.println("Record Not found");
 		}
 		catch (SQLException e) {
-			//rollback everything
+			System.out.println("Message: " + e.getMessage());
 		}
 	}
 	
@@ -148,7 +145,7 @@ public class ClerkModel {
 		ps.close();
 		}
 		catch(SQLException e) {
-			
+			System.out.println("Message: " + e.getMessage());
 		}
 	}
 	
@@ -168,15 +165,15 @@ public class ClerkModel {
 		ps.close();
 		}
 		catch(SQLException e) {
-			
+			System.out.println("Message: " + e.getMessage());
 		}
 	}
 	
-	private void UpdateInDate(Date inDate, String callNumber) {
+	private void UpdateInDate(String inDate, String callNumber) {
 		try {
 			ps = con.prepareStatement("UPDATE borrowing SET inDate = ? WHERE callNumber = ?, inDate= null");
 			
-			ps.setDate(1, inDate);
+			ps.setString(1, inDate);
 			ps.setString(2, callNumber);
 			
 			ps.executeUpdate();
@@ -184,144 +181,79 @@ public class ClerkModel {
 			ps.close();
 			}
 			catch(SQLException e) {
-				
+				System.out.println("Message: " + e.getMessage());
 			}
 	}
 	
-	private void CheckHoldRequests(String callNumber) {
+	private List<DueItem> CheckOverdue() {
+		
+		int bid;
+		String callNumber, outDate, dueDate;
+		
+		Statement  stmt;
+		ResultSet  rsOverdue;
+		
 		try {
-		ps = con.prepareStatement("SELECT callNumber FROM holdrequest WHERE callNumber = ?");
+			stmt = con.createStatement();
 
-	    ps.setString(1, callNumber);
+			rsOverdue = stmt.executeQuery("SELECT Borrowing.bid, Borrowing.callNumber, Borrowing.outDate, Fine.issuedDate "
+					+ "FROM Fine INNER JOIN Borrowing ON (Fine.bid=Borrowing.bid) "
+					+ "WHERE amount != 'null' AND paidDate = 'null'; ");
+			
+			// get info on ResultSet
+			ResultSetMetaData rsmd = rsOverdue.getMetaData();
 
-	    ResultSet rs = ps.executeQuery();
-	    
-	    if (rs.next()) {
-	    	UpdateStatusHold(callNumber); 
-	    }
-	    else
-	    	return;
-		}
-		catch (SQLException e) {
-				
-		}
+			// get number of columns
+			int numCols = rsmd.getColumnCount();
+
+			ArrayList<DueItem> overdue_items = new ArrayList<DueItem>();
+			
+			for (int i = 0; i < numCols; i++)
+			  {
+			      // get column name and print it
+
+			      System.out.printf("%-15s", rsmd.getColumnName(i+1));    
+			  }
+
+			  System.out.println(" ");
+
+			  while(rsOverdue.next())
+			  {
+			      // for display purposes get everything from Oracle 
+			      // as a string
+
+			      // simplified output formatting; truncation may occur
+				  
+				  bid = rsOverdue.getInt("Borrowing.bid");
+			      System.out.printf("%-10.10s", bid);
+
+			      callNumber = rsOverdue.getString("Borrowing.callNumber");
+			      System.out.printf("%-20.20s", callNumber);
+
+			      outDate = rsOverdue.getString("Borrowing.outDate");
+			      System.out.printf("%-20.20s", outDate);
+			      
+			      dueDate = rsOverdue.getString("Fine.IssuedDate");
+			      System.out.printf("%-20.20s", dueDate);
+			      
+			      overdue_items.add(new DueItem(bid, callNumber, outDate, dueDate));
+			  }
+		 
+			  // close the statement; 
+			  // the ResultSet will also be closed
+			  stmt.close();
+			  
+			  return overdue_items;
+			}
+			catch (SQLException ex)
+			{
+			    System.out.println("Message: " + ex.getMessage());
+			    return null;
+			}	
+		}			
 	}
 	
-	private boolean CheckOverdue(Integer bid, String callNumber) {
-		try {
-			ps = con.prepareStatement("SELECT inDate FROM borrowing WHERE bid = ?, callnumber = ?");
-			
-			ps.setInt(1, bid);
-			ps.setString(2, callNumber);
-
-			ResultSet rs = ps.executeQuery();
-
-			Date inDate = new Date(0);
-
-			if (rs.next())
-				inDate = rs.getDate("inDate");
-			else
-				return false;
-			
-			ps = con.prepareStatement("SELECT outDate FROM borrowing WHERE bid =?, callnumber = ?");
-
-			ps.setInt(1, bid);
-			ps.setString(2, callNumber);
-
-			ResultSet res = ps.executeQuery();
-
-			Date outDate = new Date(0);
-
-			if (rs.next())
-				outDate = res.getDate("outDate");
-			else
-				return false;
-			
-			Date dueDate = ComputeDueDate(bid, outDate);
-
-			if (inDate.compareTo(dueDate) > 0)
-				return true;
-			else
-				return false;
-		}
-		catch (SQLException e) {
-			return false;
-		}
-	}
-
-	private void AssessFine(Integer bid, String callNumber, Integer fid, double amount, Date issuedDate) {
-		try {
-			ps = con.prepareStatement("SELECT borid FROM borrowing WHERE bid = ?, callnumber = ?");
-			
-			ps.setInt(1, bid);
-			ps.setString(2, callNumber);
-			
-			ResultSet rs = ps.executeQuery();
-			
-			Integer borid = 0;
-			
-			if (rs.next())
-				borid = rs.getInt("borid");
-			else {
-				
-			}
-			
-			ps = con.prepareStatement("INSERT INTO fine VALUES (?,?,?,?,?)");
-			
-			ps.setInt(1, fid);
-			ps.setDouble(2, amount);
-			ps.setDate(3, issuedDate);
-			ps.setNull(4, Types.DATE);
-			ps.setInt(5, borid);
-			
-			ps.executeUpdate();
-			
-			con.commit();
-			
-			ps.close();
-			}
-			catch (SQLException e) {
-				
-			}
-	}
-	
-	private List<DueItem> DisplayOverdue() {
-		try {
-			ps = con.prepareStatement("SELECT * FROM borrowing");
-			
-			ResultSet rs = ps.executeQuery();
-			
-			List<DueItem> duelist = new ArrayList<DueItem>();
-			
-			while(rs.next()) {
-
-				Date inDate = rs.getDate("inDate");
-				
-				Date outDate = rs.getDate("outDate");
-				
-				Integer bid = rs.getInt("bid");
-
-				Date dueDate = ComputeDueDate(bid, outDate);
-
-				if (inDate != null && inDate.compareTo(dueDate) > 0) {
-					ps = con.prepareStatement("SELECT * FROM book WHERE callNumber = ?");
-					
-					ps.setString(1, rs.getString("callNumber"));
-					
-					ResultSet res = ps.executeQuery();
-					
-					duelist.add(new DueItem(bid, res.getString("title"), res.getInt("isbn"), outDate, inDate));
-				}
-			}
-			
-			return duelist;
-		}
-		catch (SQLException e) {
-			return null;
-		}
-	}
-	
-	private Date ComputeDueDate(Integer bid, Date outDate) {
+	/*private Date ComputeDueDate(Integer bid, Date outDate) {
 		try {
 			ps = con.prepareStatement("SELECT type FROM borrower WHERE bid = ?");
 
@@ -393,4 +325,101 @@ public class ClerkModel {
 			default: return "";
 		}
 	}
-}
+	
+	private boolean CheckOverdue(Integer bid, String callNumber) {
+		try {
+			ps = con.prepareStatement("SELECT inDate FROM borrowing WHERE bid = ?, callnumber = ?");
+			
+			ps.setInt(1, bid);
+			ps.setString(2, callNumber);
+
+			ResultSet rs = ps.executeQuery();
+
+			Date inDate = new Date(0);
+
+			if (rs.next())
+				inDate = rs.getDate("inDate");
+			else
+				return false;
+			
+			ps = con.prepareStatement("SELECT outDate FROM borrowing WHERE bid =?, callnumber = ?");
+
+			ps.setInt(1, bid);
+			ps.setString(2, callNumber);
+
+			ResultSet res = ps.executeQuery();
+
+			Date outDate = new Date(0);
+
+			if (rs.next())
+				outDate = res.getDate("outDate");
+			else
+				return false;
+			
+			Date dueDate = ComputeDueDate(bid, outDate);
+
+			if (inDate.compareTo(dueDate) > 0)
+				return true;
+			else
+				return false;
+		}
+		catch (SQLException e) {
+			return false;
+		}
+	}
+	
+	private void AssessFine(Integer bid, String callNumber, Integer fid, double amount, Date issuedDate) {
+		try {
+			ps = con.prepareStatement("SELECT borid FROM borrowing WHERE bid = ?, callnumber = ?");
+			
+			ps.setInt(1, bid);
+			ps.setString(2, callNumber);
+			
+			ResultSet rs = ps.executeQuery();
+			
+			Integer borid = 0;
+			
+			if (rs.next())
+				borid = rs.getInt("borid");
+			else {
+				
+			}
+			
+			ps = con.prepareStatement("INSERT INTO fine VALUES (?,?,?,?,?)");
+			
+			ps.setInt(1, fid);
+			ps.setDouble(2, amount);
+			ps.setDate(3, issuedDate);
+			ps.setNull(4, Types.DATE);
+			ps.setInt(5, borid);
+			
+			ps.executeUpdate();
+			
+			con.commit();
+			
+			ps.close();
+			}
+			catch (SQLException e) {
+				
+			}
+	}
+	
+	private void CheckHoldRequests(String callNumber) {
+		try {
+		ps = con.prepareStatement("SELECT callNumber FROM holdrequest WHERE callNumber = ?");
+
+	    ps.setString(1, callNumber);
+
+	    ResultSet rs = ps.executeQuery();
+	    
+	    if (rs.next()) {
+	    	UpdateStatusHold(callNumber); 
+	    }
+	    else
+	    	return;
+		}
+		catch (SQLException e) {
+			System.out.println("Message: " + e.getMessage());
+		}
+	}
+}*/

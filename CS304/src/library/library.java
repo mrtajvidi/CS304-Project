@@ -707,6 +707,48 @@ public class library implements ActionListener
 				
 				if(type.equals("quit"))
 					quit = true;
+				
+				if(!quit)
+				{
+					try{
+						Method AddBorrower = c.getDeclaredMethod("AddBorrower", String.class, String.class, String.class, 
+								String.class, String.class, String.class, String.class, String.class, String.class,	Connection.class);
+						AddBorrower.setAccessible(true);
+						AddBorrower.invoke(clerkModel, bid, password, name, address, phone, emailAddress, sinOrStNo, expiryDate, type, con);
+					}
+					catch (NoSuchMethodException x)
+					{
+						x.printStackTrace();
+					}
+					catch (InvocationTargetException x)
+					{
+						x.printStackTrace();
+					}
+					catch (IllegalAccessException x)
+					{
+						x.printStackTrace();
+					}
+				}
+				
+				System.out.println("Book Added");
+			}
+			
+			in.close();
+			System.out.println("\nGoodBye! \n\n");
+			System.exit(0);
+		}
+		catch (IOException e)
+		{
+			System.out.println("IOException!");
+			
+			try
+			{
+				con.close();
+				System.exit(-1);
+			}
+			catch (SQLException ex)
+			{
+				System.out.println("Message: " + ex.getMessage());
 			}
 		}
 		
@@ -714,15 +756,142 @@ public class library implements ActionListener
 
 
  	private void checkOutItem(){
- 
+ 		boolean quit;
+		
+		String borid, bid, callNumber, outDate;
+ 		
+		ClerkModel clerkModel = new ClerkModel();
+		Class c = clerkModel.getClass();
+		
+		quit = false;
+		
+		try{
+			while(!quit)
+			{
+				System.out.println("Enter borrowing ID: \n");
+				borid = in.readLine();
+				
+				if(borid.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter borrower ID: \n");
+				bid = in.readLine();
+				
+				if(bid.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter callNumber: \n");
+				callNumber = in.readLine();
+				
+				if(callNumber.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter outDate: \n");
+				outDate = in.readLine();
+				
+				if(outDate.equals("quit"))
+					quit = true;
+				
+				if(!quit)
+				{
+					try{
+						Method AddBorrower = c.getDeclaredMethod("AddBorrower", String.class, String.class, String.class, 
+								String.class, Connection.class);
+						AddBorrower.setAccessible(true);
+						AddBorrower.invoke(clerkModel, borid, bid, callNumber, outDate, con);
+					}
+					catch (NoSuchMethodException x)
+					{
+						x.printStackTrace();
+					}
+					catch (InvocationTargetException x)
+					{
+						x.printStackTrace();
+					}
+					catch (IllegalAccessException x)
+					{
+						x.printStackTrace();
+					}
+				}
+				
+				System.out.println("Book Added");
+			}
+			
+			in.close();
+			System.out.println("\nGoodBye! \n\n");
+			System.exit(0);
+		}
+		catch (IOException e)
+		{
+			System.out.println("IOException!");
+			
+			try
+			{
+				con.close();
+				System.exit(-1);
+			}
+			catch (SQLException ex)
+			{
+				System.out.println("Message: " + ex.getMessage());
+			}
+		}
+		
  	}
-
 
 	private void processReturn(){
 		
 	}
 	
 	private void checkOverdue(){
+		boolean quit;
+		
+		ClerkModel clerkModel = new ClerkModel();
+		Class c = clerkModel.getClass();
+		
+		quit = false;
+		
+		try
+		{
+			while(!quit)
+			{
+				try
+				{
+					Method DisplayOverdue = c.getDeclaredMethod("DisplayOverdue", Connection.class);
+					DisplayOverdue.setAccessible(true);
+					DisplayOverdue.invoke(clerkModel, con);
+				}
+				catch (NoSuchMethodException x)
+				{
+					x.printStackTrace();
+				}
+				catch (InvocationTargetException x)
+				{
+					x.printStackTrace();
+				}
+				catch (IllegalAccessException x)
+				{
+					x.printStackTrace();
+				}
+			}
+			
+			in.close();
+			System.out.println("\nGood Bye!\n\n");
+			System.exit(0);
+		}
+		catch (IOException e)
+		{
+			System.out.println("IOException!");
+			
+			try
+			{
+				con.close();
+				System.exit(-1);
+			}
+			catch (SQLException ex)
+			{
+				System.out.println("Message: " + ex.getMessage());
+			}
+		}
 		
 	}
 
