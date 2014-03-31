@@ -387,23 +387,58 @@ public class ClerkModel {
 		
 		try {
 			stmt = con.createStatement();
+			boolean isHold = false;
 			rs = stmt.executeQuery("SELECT issuedDate, bid FROM holdrequest WHERE callNumber = '"+ callNumber + "'");
 			
 		    while (rs.next()) {
 		    	issuedDates.add(rs.getString("issuedDate"));
 		    	bid.add(rs.getInt("bid"));
+		    	isHold = true;
 		    }
 		    
 		    //CHECK WHO RESERVED THE BOOK FIRST AND EMAIL THEM
+		    if (isHold){
+		    	Integer first = firstReserve(issuedDates, bid);
 		    
-		    UpdateStatusHold(callNumber, con); 
+		    	UpdateStatusHold(callNumber, con); 
 		    
-		    System.out.println("BOOK PLACED ON HOLD");
+		    	System.out.println("BOOK PLACED ON HOLD");
+		    	System.out.println("EMAILING BID USER: "+ first);
+		    
+		    }
 		}
 		catch (SQLException e) {
 				
 		}
 	}
+	
+	private Integer firstReserve(List<String> issuedDates, List<Integer> bid){
+		
+		Integer minYear = 2015;
+		Integer minMonth = 12;
+		Integer minDay = 12;
+		Integer minBID = 0;
+		
+		for (int i = 0; i<issuedDates.size() - 1 ; i++){
+			String[] date = issuedDates.get(i).split("/");
+			String yearString[] = date[2].split(" ");
+			Integer year = Integer.valueOf(yearString[0]);
+			Integer month = Integer.valueOf(date[0]);
+			Integer day = Integer.valueOf(date[1]);
+			
+			if (year < minYear ) {
+				minYear = year;
+				minBID = bid.get(i);
+			}
+			if (month < minMonth ) minMonth = month;
+			if (day < minDay ) minDay = day;
+
+			
+		}
+		
+		return minBID;
+	}
+	
 	
 	private List<DueItem> CheckOverdue() {
 		

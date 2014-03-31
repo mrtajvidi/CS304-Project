@@ -159,7 +159,7 @@ public class BorrowerModel {
 			stmt = con.createStatement();
 			
 			rs = stmt.executeQuery("SELECT borrowing.callnumber, borrowing.outDate, book.title, book.mainAuthor"
-					+ " FROM borrowing, book WHERE bid = " + bid + " and borrowing.callNumber = book.callnumber");
+					+ " FROM borrowing, book WHERE bid = " + bid + " and borrowing.callNumber = book.callnumber and borrowing.indate is null");
 			
 			//rs = stmt.executeQuery("SELECT * from borrowing");
 			
@@ -510,7 +510,7 @@ email to the borrower and informs the library clerk to keep the book out of the 
 			
 			while(rs.next())
 			  {
-				hid = rs.getInt("hid");			
+				hid++;		
 			  }
 			
 			hid ++;

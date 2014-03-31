@@ -51,8 +51,6 @@ CREATE TABLE Borrowing (
   FOREIGN KEY (bid) REFERENCES Borrower,
   FOREIGN KEY (callNumber, copyNo) REFERENCES BookCopy (callNumber, copyNo));    
   
-  
-
 CREATE TABLE Fine (
   fid integer NOT NULL primary key,
   amount float,
