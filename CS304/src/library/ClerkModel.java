@@ -1,7 +1,16 @@
 package library;
 
-import java.sql.*;
+import java.sql.Connection;
+//import java.sql.Date;
+import java.util.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -508,6 +517,7 @@ public class ClerkModel {
 					
 	}
 
+//###################################### Caution ########################################	
 	private void AssessFine(Integer bid, String callNumber, Integer fid, double amount, Date issuedDate, Connection con) {
 		try {
 			ps = con.prepareStatement("SELECT borid FROM borrowing WHERE bid = ?, callnumber = ?");
@@ -529,7 +539,7 @@ public class ClerkModel {
 			
 			ps.setInt(1, fid);
 			ps.setDouble(2, amount);
-			ps.setDate(3, issuedDate);
+			//ps.setDate(3, issuedDate); // THIS NEED TO BE CHANGED
 			ps.setNull(4, Types.DATE);
 			ps.setInt(5, borid);
 			
@@ -699,4 +709,47 @@ public class ClerkModel {
 			default: return "";
 		}*/
 	}
+	
+	private Date StringToDate(String string_input)
+	{
+		SimpleDateFormat df = new SimpleDateFormat("MM/dd/yyyy");
+		Date date_output = null;
+		
+		try
+		{
+			date_output = df.parse(string_input);
+			//System.out.println(date);
+			//System.out.println(df.format(date));
+		}
+		catch (ParseException e) 
+		{
+			e.printStackTrace();
+		}
+		
+		return date_output;
+	}
+	
+	private String DateToString(Date date_input)
+	{
+		String string_output = null;
+		
+		DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
+		string_output = df.format(date_input);
+		
+		return string_output;
+	}
+	
+	private Date addDate(Date inputDate, int amount_add)
+	{
+		Date result;
+		
+		Calendar c = Calendar.getInstance(); 
+		c.setTime(inputDate);
+		
+		c.add(Calendar.DATE, amount_add);
+		result = c.getTime();
+		
+		return result;
+	}
+		
 }
