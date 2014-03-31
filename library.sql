@@ -56,8 +56,8 @@ CREATE TABLE Borrowing (
 CREATE TABLE Fine (
   fid integer NOT NULL primary key,
   amount float,
-  issuedDate DATE,
-  paidDate DATE ,
+  issuedDate Varchar(20),
+  paidDate varchar(20),
   borid integer NOT NULL,
   FOREIGN KEY (borid) REFERENCES Borrowing (borid));
 

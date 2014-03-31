@@ -29,8 +29,8 @@ insert into HasSubject values('102', 'About ABC');
 insert into HasSubject values('103', 'About Patterns');
 
 
-insert into HoldRequest values(111, 10, '103', '2014/02/01'); 
-insert into HoldRequest values(222, 20, '101', '2014/03/01');  
+insert into HoldRequest values(1, 10, '103', '2014/02/01'); 
+insert into HoldRequest values(2, 20, '101', '2014/03/01');  
 
 
 insert into BookCopy values ( '101' , '3', 'on-hold');
