@@ -160,8 +160,8 @@ public class library implements ActionListener
      */ 
     private boolean connect(String username, String password)
     {
-      String connectURL = "jdbc:oracle:thin:@localhost:1522:ug"; 
-//      String connectURL = "jdbc:mysql://localhost:3306/test";
+//      String connectURL = "jdbc:oracle:thin:@localhost:1522:ug"; 
+      String connectURL = "jdbc:mysql://localhost:3306/test";
 
       try 
       {

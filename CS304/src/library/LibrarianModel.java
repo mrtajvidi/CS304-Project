@@ -2,7 +2,12 @@ package library;
 
 import java.io.IOException;
 import java.sql.*;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 import javax.security.auth.Subject;
@@ -168,9 +173,12 @@ public class LibrarianModel {
 		String copyNo;
 		String status;
 		String borid;
-		String bid;
+		int bid;
 		String outdate;
 		String indate;
+		
+		String overDue_column_name = "Overdue";
+		int overdue_flag = 0;
 		
 		Statement  stmt;
 		ResultSet  rsStatus;
@@ -182,14 +190,14 @@ public class LibrarianModel {
 		  
 		  if(subject.equals(""))
 		  {
-			  rsStatus = stmt.executeQuery("SELECT BookCopy.callNumber, BookCopy.copyNo, Status, Borid, Outdate, Indate "
+			  rsStatus = stmt.executeQuery("SELECT Borrowing.bid, BookCopy.callNumber, BookCopy.copyNo, Status, Borid, Outdate, Indate "
 				  		+ "FROM BookCopy, Borrowing "
 				  		+ "WHERE BookCopy.callNumber = Borrowing.callNumber and BookCopy.copyNo = Borrowing.copyNo and status = 'out'"
 				  		+ "ORDER BY callNumber");
 		  }
 		  else //Edit
 		  {
-			  rsStatus = stmt.executeQuery("SELECT BookCopy.callNumber, BookCopy.copyNo, Status, Borid, Outdate, Indate "
+			  rsStatus = stmt.executeQuery("SELECT Borrowing.bid, BookCopy.callNumber, BookCopy.copyNo, Status, Borid, Outdate, Indate "
 				  		+ "FROM BookCopy, Borrowing, HasSubject "
 				  		+ "WHERE BookCopy.callNumber = Borrowing.callNumber and BookCopy.copyNo = Borrowing.copyNo and status = 'out' "
 				  		+ "AND HasSubject.subject = '" + subject + "' AND Borrowing.callNumber = HasSubject.callNumber "
@@ -210,7 +218,9 @@ public class LibrarianModel {
 		  {
 		      // get column name and print it
 
-		      System.out.printf("%-15s", rsmd.getColumnName(i+1));    
+		      System.out.printf("%-15s", rsmd.getColumnName(i+1)); 
+		      if(i == numCols - 1)
+		    	  System.out.printf("%-15s", overDue_column_name); 
 		  }
 
 		  System.out.println(" ");
@@ -218,6 +228,8 @@ public class LibrarianModel {
 		  while(rsStatus.next())
 		  {
 			  //BookCopy.callNumber, BookCopy.copyNo, Status, Borid, Outdate, Indate
+			  bid = rsStatus.getInt("bid");
+		      System.out.printf("%-10.10s", bid);
 			  
 		      callNumber = rsStatus.getString("callNumber");
 		      System.out.printf("%-20.20s", callNumber);
@@ -237,11 +249,27 @@ public class LibrarianModel {
 		      indate = rsStatus.getString("indate");
 		      System.out.printf("%-15.15s", indate);
 		      
+		      String dueDate = ComputeDueDate(bid, outdate, con);
+				
+		      Date dueDate_Date = stringToDate(dueDate);
+		      Date outDate_Date = stringToDate(outdate);
+		      Date today_Date = getTodayDate();
+		      
+		      if (outDate_Date != null && indate == null && today_Date.compareTo(dueDate_Date) > 0) {
+		    	  overdue_flag = 1;
+		    	  System.out.printf("%-15.15s", overdue_flag);
+		      }
+		      else 
+		      {
+		    	  overdue_flag = 0;
+		    	  System.out.printf("%-15.15s", overdue_flag);
+		      }
+		      
 		      System.out.println(" ");
 		      
 			  //CheckedOut(String callNumber, String copyNumber, String status, String borid, String outDate, String inDate) 
 
-		      outStatus.add(new CheckedOut(callNumber, copyNo, status, borid, outdate, indate));
+		      outStatus.add(new CheckedOut(callNumber, copyNo, status, borid, outdate, indate, overdue_flag));
 		  }
 	 
 		  // close the statement; 
@@ -273,7 +301,7 @@ public class LibrarianModel {
 
 		  rsPopular = stmt.executeQuery("SELECT Book.title, Borrowing.callNumber, count(*) AS borrowed_count "
 		  		+ "FROM Borrowing INNER JOIN Book ON (Borrowing.callNumber=Book.callNumber) "
-		  		+ "WHERE Borrowing.outDate Like '" + year + "%' "
+		  		+ "WHERE Borrowing.outDate Like '%" + year + "' "
 		  		+ "GROUP BY Borrowing.callNumber "
 		  		+ "ORDER BY borrowed_count desc limit " + n + ";");		  
 
@@ -328,5 +356,102 @@ public class LibrarianModel {
 		    System.out.println("Message: " + ex.getMessage());
 		    return null;
 		}	
-	}	
+	}
+	
+	private String ComputeDueDate(Integer bid, String outDate, Connection con) {
+		Statement stmt;
+		ResultSet rs;
+		
+		try {
+			stmt = con.createStatement();
+			
+			rs = stmt.executeQuery("SELECT type FROM borrower WHERE bid = " + bid);
+
+			String type = null;
+			
+			while(rs.next()){
+
+				type = rs.getString("type");
+//				System.out.println("type: " + type);
+			
+			}
+				
+			rs = stmt.executeQuery("SELECT bookTimeLimit FROM borrowertype WHERE type = '" + type +"'");
+
+			Integer timelimit = 0;
+
+			while (rs.next()){
+				timelimit = rs.getInt("bookTimeLimit");
+//				System.out.println("Time Limit: " + timelimit);
+			}
+			
+			
+			
+			String date = AdjustDate(outDate, timelimit);
+			
+			return date;
+		}
+		catch (SQLException e) {
+			System.out.println("Message: " + e.getMessage());
+			return null;
+		}
+	}
+	
+	private String AdjustDate(String outDate, int length) {
+		Date temp, result;
+		String output;
+
+		temp = stringToDate(outDate);
+		result = addDate(temp, length*7 );
+		output = dateToString(result);
+
+		return output;
+	}
+	
+	private Date getTodayDate(){
+		
+		Date todayDate = new Date();
+		
+		return todayDate;
+	}
+
+	private Date stringToDate(String string_input)
+	{
+		SimpleDateFormat df = new SimpleDateFormat("MM/dd/yyyy");
+		Date date_output = null;
+
+		try
+		{
+			date_output = df.parse(string_input);
+		}
+		catch (ParseException e) 
+		{
+			e.printStackTrace();
+		}
+
+		return date_output;
+	}
+
+	private String dateToString(Date date_input) {
+
+		String string_output = null;
+
+		DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
+		string_output = df.format(date_input);
+
+		return string_output;
+	}
+
+	private Date addDate(Date inputDate, int amount_add) {
+
+		Date result;
+
+		Calendar c = Calendar.getInstance(); 
+		c.setTime(inputDate);
+
+		c.add(Calendar.DATE, amount_add);
+		result = c.getTime();
+
+		return result;
+	}
 }

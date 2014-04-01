@@ -451,75 +451,6 @@ public class ClerkModel {
 		
 		return minBID;
 	}
-	
-	
-	/*private List<DueItem> CheckOverdue(Connection con) {
-		
-		int bid;
-		String callNumber, outDate, dueDate;
-		
-		Statement  stmt;
-		ResultSet  rsOverdue;
-		
-		try {
-			stmt = con.createStatement();
-
-			rsOverdue = stmt.executeQuery("SELECT Borrowing.bid, Borrowing.callNumber, Borrowing.outDate, Fine.issuedDate "
-					+ "FROM Fine INNER JOIN Borrowing ON (Fine.bid=Borrowing.bid) "
-					+ "WHERE amount != 'null' AND paidDate = 'null'; ");
-			
-			// get info on ResultSet
-			ResultSetMetaData rsmd = rsOverdue.getMetaData();
-
-			// get number of columns
-			int numCols = rsmd.getColumnCount();
-
-			ArrayList<DueItem> overdue_items = new ArrayList<DueItem>();
-			
-			for (int i = 0; i < numCols; i++)
-			  {
-			      // get column name and print it
-
-			      System.out.printf("%-15s", rsmd.getColumnName(i+1));    
-			  }
-
-			  System.out.println(" ");
-
-			  while(rsOverdue.next())
-			  {
-			      // for display purposes get everything from Oracle 
-			      // as a string
-
-			      // simplified output formatting; truncation may occur
-				  
-				  bid = rsOverdue.getInt("Borrowing.bid");
-			      System.out.printf("%-10.10s", bid);
-
-			      callNumber = rsOverdue.getString("Borrowing.callNumber");
-			      System.out.printf("%-20.20s", callNumber);
-
-			      outDate = rsOverdue.getString("Borrowing.outDate");
-			      System.out.printf("%-20.20s", outDate);
-			      
-			      dueDate = rsOverdue.getString("Fine.IssuedDate");
-			      System.out.printf("%-20.20s", dueDate);
-			      
-			      //overdue_items.add(new DueItem(bid, callNumber, outDate, dueDate));
-			  }
-		 
-			  // close the statement; 
-			  // the ResultSet will also be closed
-			  stmt.close();
-			  
-			  return overdue_items;
-			}
-			catch (SQLException ex)
-			{
-			    System.out.println("Message: " + ex.getMessage());
-			    return null;
-			}	
-					
-	}*/
 
 	private void AssessFine(Integer bid, String callNumber, Integer fid, double amount, String issuedDate, Connection con) {
 		try {
@@ -666,6 +597,7 @@ public class ClerkModel {
 			return null;
 		}
 	}
+	
 	private boolean isOverdue(String inDate, String dueDate){
 
 		Date inDate_Date, dueDate_Date;
@@ -740,3 +672,72 @@ public class ClerkModel {
 
 }
 
+
+
+/*private List<DueItem> CheckOverdue(Connection con) {
+	
+	int bid;
+	String callNumber, outDate, dueDate;
+	
+	Statement  stmt;
+	ResultSet  rsOverdue;
+	
+	try {
+		stmt = con.createStatement();
+
+		rsOverdue = stmt.executeQuery("SELECT Borrowing.bid, Borrowing.callNumber, Borrowing.outDate, Fine.issuedDate "
+				+ "FROM Fine INNER JOIN Borrowing ON (Fine.bid=Borrowing.bid) "
+				+ "WHERE amount != 'null' AND paidDate = 'null'; ");
+		
+		// get info on ResultSet
+		ResultSetMetaData rsmd = rsOverdue.getMetaData();
+
+		// get number of columns
+		int numCols = rsmd.getColumnCount();
+
+		ArrayList<DueItem> overdue_items = new ArrayList<DueItem>();
+		
+		for (int i = 0; i < numCols; i++)
+		  {
+		      // get column name and print it
+
+		      System.out.printf("%-15s", rsmd.getColumnName(i+1));    
+		  }
+
+		  System.out.println(" ");
+
+		  while(rsOverdue.next())
+		  {
+		      // for display purposes get everything from Oracle 
+		      // as a string
+
+		      // simplified output formatting; truncation may occur
+			  
+			  bid = rsOverdue.getInt("Borrowing.bid");
+		      System.out.printf("%-10.10s", bid);
+
+		      callNumber = rsOverdue.getString("Borrowing.callNumber");
+		      System.out.printf("%-20.20s", callNumber);
+
+		      outDate = rsOverdue.getString("Borrowing.outDate");
+		      System.out.printf("%-20.20s", outDate);
+		      
+		      dueDate = rsOverdue.getString("Fine.IssuedDate");
+		      System.out.printf("%-20.20s", dueDate);
+		      
+		      //overdue_items.add(new DueItem(bid, callNumber, outDate, dueDate));
+		  }
+	 
+		  // close the statement; 
+		  // the ResultSet will also be closed
+		  stmt.close();
+		  
+		  return overdue_items;
+		}
+		catch (SQLException ex)
+		{
+		    System.out.println("Message: " + ex.getMessage());
+		    return null;
+		}	
+				
+}*/
