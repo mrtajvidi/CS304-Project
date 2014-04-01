@@ -159,8 +159,7 @@ public class library implements ActionListener
      */ 
     private boolean connect(String username, String password)
     {
-      //String connectURL = "jdbc:oracle:thin:@localhost:1522:ug"; 
-    	String connectURL = "jdbc:mysql://localhost:3306/test";
+      String connectURL = "jdbc:oracle:thin:@localhost:1522:ug"; 
 
       try 
       {
@@ -1390,7 +1389,7 @@ registered as "on hold" and a message is send to the borrower who made the hold 
 				
 				if(status.equals("quit"))
 					quit = true;
-					
+				
 				if(!quit)
 				{
 					try{
@@ -1646,25 +1645,17 @@ registered as "on hold" and a message is send to the borrower who made the hold 
 	
 	private void generateReportCheckedOut(){
 		boolean quit;
-		String subject;
 		
 		LibrarianModel libModel = new LibrarianModel();
 		Class c = libModel.getClass();
 		
 		quit = false;
 		
-		try{
-			
-			System.out.println("Enter the subject: \n");
-			subject = in.readLine();
-				
-			if(subject.equals("quit"))
-				quit = true;
-		
-			try{
-					Method generateReport_CheckedOut = c.getDeclaredMethod("generateReport_CheckedOut", String.class, Connection.class);
+		try
+				{
+					Method generateReport_CheckedOut = c.getDeclaredMethod("generateReport_CheckedOut", Connection.class);
 					generateReport_CheckedOut.setAccessible(true);
-					generateReport_CheckedOut.invoke(libModel, subject, con);
+					generateReport_CheckedOut.invoke(libModel, con);
 				}
 				catch (NoSuchMethodException x)
 				{
@@ -1678,29 +1669,17 @@ registered as "on hold" and a message is send to the borrower who made the hold 
 				{
 					x.printStackTrace();
 				}
-				selectLibrarian();
-		}
-		catch (IOException e)
-		{
-			System.out.println("IOException!");
 			
-			try
-			{
-				con.close();
-				System.exit(-1);
-			}
-			catch (SQLException ex)
-			{
-				System.out.println("Message: " + ex.getMessage());
-			}
-		}			
+		selectLibrarian();
+
+		
 	}
 	
 	private void generateReportPopular(){
 		
 		boolean quit;
 		
-		String n_input, year;
+		String n_input, fromDate, toDate;
 		int n;
 		
 		LibrarianModel libModel = new LibrarianModel();
@@ -1710,35 +1689,45 @@ registered as "on hold" and a message is send to the borrower who made the hold 
 		
 		try
 		{
-			System.out.println("Enter the year: \n");
-			year = in.readLine();
-				
-			if(year.equals("quit"))
-				quit = true;
-				
-			System.out.println("Enter the number of results: \n");
-			n_input = in.readLine();
-				
-			if(n_input.equals("quit"))
-				quit = true;
-				
-			try
+			while(!quit)
 			{
-				Method find_Popular = c.getDeclaredMethod("find_Popular", String.class, String.class, Connection.class);
-				find_Popular.setAccessible(true);
-				find_Popular.invoke(libModel, year, n_input, con);
-			}
-			catch (NoSuchMethodException x)
-			{
-				x.printStackTrace();
-			}
-			catch (InvocationTargetException x)
-			{
-				x.printStackTrace();
-			}
-			catch (IllegalAccessException x)
-			{
-				x.printStackTrace();
+				System.out.println("Enter the start date: \n");
+				fromDate = in.readLine();
+				
+				if(fromDate.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter the end date: \n");
+				toDate = in.readLine();
+				
+				if(toDate.equals("quit"))
+					quit = true;
+				
+				System.out.println("Enter the number of results: \n");
+				n_input = in.readLine();
+				n = Integer.parseInt(n_input);
+				
+				if(n_input.equals("quit"))
+					quit = true;
+				
+				try
+				{
+					Method findPopular = c.getDeclaredMethod("findPopular", String.class, String.class, Integer.class, Connection.class);
+					findPopular.setAccessible(true);
+					findPopular.invoke(libModel, fromDate, toDate, n, con);
+				}
+				catch (NoSuchMethodException x)
+				{
+					x.printStackTrace();
+				}
+				catch (InvocationTargetException x)
+				{
+					x.printStackTrace();
+				}
+				catch (IllegalAccessException x)
+				{
+					x.printStackTrace();
+				}
 			}
 			
 			selectLibrarian();

@@ -5,15 +5,16 @@ import java.sql.Date;
 public class DueItem {
 
 	Integer bid;
-	String callNumber;
-	String outDate;
-	String dueDate;
+	String title;
+	Integer isbn;
+	Date outDate;
+	Date inDate;
 	
-	
-	public DueItem (Integer bid, String callNumber, String outDate, String dueDate) {
+	public DueItem (Integer bid, String a, Integer b, Date c, Date d) {
 		this.bid = bid;
-		this.callNumber = callNumber;
-		this.outDate = outDate;
-		this.dueDate = dueDate;
+		title = a;
+		isbn = b;
+		outDate = c;
+		inDate = d;
 	}
 }

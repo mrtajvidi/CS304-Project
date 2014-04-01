@@ -9,6 +9,7 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Date;
 
+
 public class ClerkModel {
 	
 	private PreparedStatement ps = null;
@@ -278,7 +279,7 @@ public class ClerkModel {
 					
 					while(rs.next())
 					  {
-						fid = rs.getInt("fid");			
+						fid ++;			
 					  }
 					
 					fid ++;
@@ -293,6 +294,7 @@ public class ClerkModel {
 				
 				//ASSIGN FINE AMOUNT
 				double amount = 2.50;
+				amount = assignFineAmount(inDate, dueDate);
 				
 				ps = con.prepareStatement("INSERT INTO Fine VALUES (?,?,?,?,?)");
 				
@@ -319,7 +321,12 @@ public class ClerkModel {
 		}
 	}
 	
-	
+	private double assignFineAmount(String inDate, String outDate){
+		
+		int time = daysBetween (inDate, outDate);
+
+		return 0.5*time;
+	}
 	
 	
 	private void UpdateStatusIn(String callNumber, String copyNo, Connection con) {
@@ -695,6 +702,27 @@ public class ClerkModel {
 		result = c.getTime();
 
 		return result;
+	}
+	
+	private int daysBetween( String date1, String date2){
+		try{
+			DateFormat formatter= new SimpleDateFormat("MM/dd/yyyy");
+			String truncatedDateString1 = formatter.format(date1);
+			Date truncatedDate1 = formatter.parse(truncatedDateString1);
+	
+			String truncatedDateString2 = formatter.format(date2);
+			Date truncatedDate2 = formatter.parse(truncatedDateString2);
+	
+			long timeDifference = truncatedDate2.getTime()- truncatedDate1.getTime();
+	
+			int daysInBetween = (int) timeDifference / (24*60*60*1000);
+			return daysInBetween;
+		}
+		catch (ParseException p){
+			System.out.println("PARSE EXCEPTION");
+			return 0;
+		}
+		
 	}
 
 }

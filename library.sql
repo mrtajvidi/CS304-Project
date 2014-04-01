@@ -1,3 +1,14 @@
+drop table fine;
+drop table borrowing;
+drop table holdrequest;
+drop table bookcopy;
+drop table hassubject;
+drop table hasauthor;
+drop table book;
+drop table borrower;
+drop table borrowertype;
+
+
 
 CREATE TABLE BorrowerType (
   type CHAR(20) NOT NULL PRIMARY KEY,
