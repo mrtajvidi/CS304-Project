@@ -160,8 +160,8 @@ public class library implements ActionListener
      */ 
     private boolean connect(String username, String password)
     {
-      //String connectURL = "jdbc:oracle:thin:@localhost:1522:ug"; 
-    	String connectURL = "jdbc:mysql://localhost:3306/test";
+      String connectURL = "jdbc:oracle:thin:@localhost:1522:ug"; 
+//      String connectURL = "jdbc:mysql://localhost:3306/test";
 
       try 
       {
@@ -1273,26 +1273,23 @@ registered as "on hold" and a message is send to the borrower who made the hold 
 		
 		try
 		{
-			while(!quit)
+			try
 			{
-				try
-				{
-					Method DisplayOverdue = c.getDeclaredMethod("DisplayOverdue", Connection.class);
-					DisplayOverdue.setAccessible(true);
-					DisplayOverdue.invoke(clerkModel, con);
-				}
-				catch (NoSuchMethodException x)
-				{
-					x.printStackTrace();
-				}
-				catch (InvocationTargetException x)
-				{
-					x.printStackTrace();
-				}
-				catch (IllegalAccessException x)
-				{
-					x.printStackTrace();
-				}
+				Method DisplayOverdue = c.getDeclaredMethod("DisplayOverdue", Connection.class);
+				DisplayOverdue.setAccessible(true);
+				DisplayOverdue.invoke(clerkModel, con);
+			}
+			catch (NoSuchMethodException x)
+			{
+				x.printStackTrace();
+			}
+			catch (InvocationTargetException x)
+			{
+				x.printStackTrace();
+			}
+			catch (IllegalAccessException x)
+			{
+				x.printStackTrace();
 			}
 			
 			in.close();

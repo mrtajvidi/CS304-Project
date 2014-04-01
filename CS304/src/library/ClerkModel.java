@@ -453,7 +453,7 @@ public class ClerkModel {
 	}
 	
 	
-	private List<DueItem> CheckOverdue() {
+	/*private List<DueItem> CheckOverdue(Connection con) {
 		
 		int bid;
 		String callNumber, outDate, dueDate;
@@ -519,7 +519,7 @@ public class ClerkModel {
 			    return null;
 			}	
 					
-	}
+	}*/
 
 	private void AssessFine(Integer bid, String callNumber, Integer fid, double amount, String issuedDate, Connection con) {
 		try {
@@ -561,36 +561,60 @@ public class ClerkModel {
 		Statement stmt;
 		ResultSet rs;
 		
+		int borid, bid;
+		String callNumber, copyNo, inDate, outDate, dueDate;
+		String dueDate_column_name = "Due Date";
 		try {
 			stmt = con.createStatement();
 			
 			rs = stmt.executeQuery("SELECT * FROM borrowing");
 			
+			// get info on ResultSet
+			ResultSetMetaData rsmd = rs.getMetaData();
+
+			// get number of columns
+			int numCols = rsmd.getColumnCount();
+
+			// display column names;
+			for (int i = 0; i < numCols; i++)
+			{
+			    // get column name and print it
+				System.out.printf("%-15s", rsmd.getColumnName(i+1)); 
+				if(i == numCols -1)
+					System.out.printf("%-15s", dueDate_column_name); 
+			}
+			
+			System.out.println(" ");
+			
 			List<DueItem> duelist = new ArrayList<DueItem>();
 			
 			while(rs.next()) {
-				Integer bid = rs.getInt("bid");
-				System.out.printf("%-15.15s", bid);
+				borid = rs.getInt("borid");
+								
+				bid = rs.getInt("bid");
 				
-				String callNumber = rs.getString("callNumber");
-				System.out.printf("%-20.20s", callNumber);
+				callNumber = rs.getString("callNumber");
+								
+				copyNo = rs.getString("copyNo");
+								
+				outDate = rs.getString("outDate");
 				
-				String copyNo = rs.getString("copyNo");
-				System.out.printf("%-10.10s", copyNo);
-
-				String inDate = rs.getString("inDate");
-				System.out.printf("%-15.15s", inDate);
+				inDate = rs.getString("inDate");
 				
-				String outDate = rs.getString("outDate");
-				System.out.printf("%-15.15s", outDate);
-
-				String dueDate = ComputeDueDate(bid, outDate, con);
-				System.out.printf("%-15.15s", dueDate);
-				
+				dueDate = ComputeDueDate(bid, outDate, con);
+								
 				Date dueDate_Date = stringToDate(dueDate);
-				Date inDate_Date = stringToDate(inDate);
-
-				if (inDate != null && inDate.compareTo(dueDate) > 0) {
+				Date outDate_Date = stringToDate(outDate);
+				Date today_Date = getTodayDate();
+				
+				if (outDate_Date != null && inDate == null && today_Date.compareTo(dueDate_Date) > 0) {
+					System.out.printf("%-15.15s", borid);
+					System.out.printf("%-15.15s", bid);
+					System.out.printf("%-20.20s", callNumber);
+					System.out.printf("%-10.10s", copyNo);
+					System.out.printf("%-15.15s", outDate);
+					System.out.printf("%-15.15s", inDate);
+					System.out.printf("%-15.15s \n", dueDate);
 					duelist.add(new DueItem(bid, callNumber, copyNo, outDate, inDate ,dueDate));
 				}
 			}
@@ -618,7 +642,7 @@ public class ClerkModel {
 			while(rs.next()){
 
 				type = rs.getString("type");
-				System.out.println("type: " + type);
+//				System.out.println("type: " + type);
 			
 			}
 				
@@ -628,7 +652,7 @@ public class ClerkModel {
 
 			while (rs.next()){
 				timelimit = rs.getInt("bookTimeLimit");
-				System.out.println("Time Limit: " + timelimit);
+//				System.out.println("Time Limit: " + timelimit);
 			}
 			
 			
@@ -665,6 +689,13 @@ public class ClerkModel {
 		output = dateToString(result);
 
 		return output;
+	}
+	
+	private Date getTodayDate(){
+		
+		Date todayDate = new Date();
+		
+		return todayDate;
 	}
 
 	private Date stringToDate(String string_input)
